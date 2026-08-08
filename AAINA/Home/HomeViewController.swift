@@ -25,9 +25,9 @@ class HomeViewController: UIViewController {
     ]
     private let nutritionArticles: [(id: String, title: String, meta: String)] = [
         ("collagen-boost", "Collagen Boost", "8 min read"),
-        ("skin-vitamins", "Vitamins your skin love", "3 min read"),
-        ("nutrition-myths", "Nutrition Myths", "5 min read"),
-        ("what-to-avoid", "What to Avoid?", "4 min read")
+        ("vitamins-skincare", "Vitamins your skin love", "3 min read"),
+        ("nutrition-skin", "Nutrition Myths", "5 min read"),
+        ("foods-to-limit", "What to Avoid?", "4 min read")
     ]
     
     private var currentUserID: String {
@@ -58,6 +58,7 @@ class HomeViewController: UIViewController {
         overrideUserInterfaceStyle = .light
         title = ""
         navigationController?.setNavigationBarHidden(true, animated: false)
+        configureHomeTabItem()
         
         view.applyAINABackground()
         
@@ -76,6 +77,7 @@ class HomeViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        configureHomeTabItem()
         aiOutput = dataModel.aiRoutine
         reloadRoutineData()
         HomeCollectionView.reloadData()
@@ -87,15 +89,24 @@ class HomeViewController: UIViewController {
     }
 
     private func presentWeeklyCheckInIfNeeded() {
+
+        guard WeeklyCheckInManager.shouldShow() else { return }
+        WeeklyCheckInManager.markShownThisWeek()
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
-            guard let self, self.presentedViewController == nil else { return }
+
+            guard let self = self,
+                  self.presentedViewController == nil else { return }
+
             let vc = WeeklyCheckInViewController()
             vc.modalPresentationStyle = .pageSheet
+
             if let sheet = vc.sheetPresentationController {
                 sheet.detents = [.large()]
                 sheet.prefersGrabberVisible = true
                 sheet.preferredCornerRadius = 28
             }
+
             self.present(vc, animated: true)
         }
     }
@@ -192,6 +203,7 @@ private extension HomeViewController {
 
     func openInsights() {
         let insightsVC = InsightViewController()
+        insightsVC.initialSelectedDate = Date()
         insightsVC.hidesBottomBarWhenPushed = true
         navigationController?.pushViewController(insightsVC, animated: true)
     }
@@ -213,7 +225,7 @@ extension HomeViewController {
         
         HomeCollectionView.register(UINib(nibName: "HomeRoutineSectionCollectionViewCell", bundle: nil), forCellWithReuseIdentifier: HomeRoutineSectionCollectionViewCell.identifier)
         
-        HomeCollectionView.register(UINib(nibName: "InsightSectionCollectionViewCell", bundle: nil), forCellWithReuseIdentifier: InsightSectionCollectionViewCell.identifier)
+        HomeCollectionView.register(InsightSectionCollectionViewCell.self, forCellWithReuseIdentifier: InsightSectionCollectionViewCell.identifier)
         
         HomeCollectionView.register(UINib(nibName: IngredientScannerCollectionViewCell.identifier, bundle: nil), forCellWithReuseIdentifier: IngredientScannerCollectionViewCell.identifier)
         
@@ -250,6 +262,14 @@ extension HomeViewController {
         return titles.map { formattedRoutineTitle($0) }
     }
 
+    private func currentRoutineStepIDs() -> [String] {
+        aiOutput != nil ? aiSteps.map { $0.id } : steps.map { $0.id }
+    }
+
+    private func currentRoutineCompletionStates() -> [Bool] {
+        currentRoutineStepIDs().map { AppDataModel.shared.isStepDone(stepID: $0, date: Date()) }
+    }
+
     private func formattedRoutineTitle(_ title: String) -> String {
         title
             .split(separator: " ")
@@ -260,7 +280,9 @@ extension HomeViewController {
             .joined(separator: " ")
     }
     
-    private func currentCompletedCount() -> Int { 0 }
+    private func currentCompletedCount() -> Int {
+        currentRoutineCompletionStates().filter { $0 }.count
+    }
 
     private func currentRoutineCardHeight() -> CGFloat {
         let stepCount = max(currentRoutineTitles().count, 1)
@@ -271,6 +293,15 @@ extension HomeViewController {
         let rowsHeight = CGFloat(stepCount) * rowHeight
         let spacingHeight = CGFloat(max(stepCount - 1, 0)) * rowSpacing
         return max(280, cellVerticalPadding + containerChromeHeight + rowsHeight + spacingHeight)
+    }
+
+    private func latestInsightDate() -> Date {
+        InsightStore.shared
+            .allEntries()
+            .compactMap(\.dateValue)
+            .max()
+            .map { Calendar.current.startOfDay(for: $0) }
+        ?? Calendar.current.startOfDay(for: Date())
     }
 
     private func openHomeDestination(withIdentifier identifier: String) {
@@ -291,6 +322,15 @@ extension HomeViewController {
         vc.hidesBottomBarWhenPushed = true
         navigationController?.setNavigationBarHidden(true, animated: true)
         navigationController?.pushViewController(vc, animated: true)
+    }
+
+    func configureHomeTabItem() {
+        guard let item = navigationController?.tabBarItem ?? tabBarItem else { return }
+        item.title = "Home"
+        item.image = UIImage(systemName: "house")
+        item.selectedImage = UIImage(systemName: "house.fill")
+        item.titlePositionAdjustment = .zero
+        item.imageInsets = .zero
     }
 }
 
@@ -378,7 +418,7 @@ extension HomeViewController: UICollectionViewDataSource {
             cell.delegate = self
             cell.configure(
                 steps: currentRoutineTitles(),
-                completedCount: currentCompletedCount(),
+                completedStates: currentRoutineCompletionStates(),
                 selectedSegment: selectedSegment
             )
             return cell
@@ -386,7 +426,8 @@ extension HomeViewController: UICollectionViewDataSource {
         case 4:
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: InsightSectionCollectionViewCell.identifier, for: indexPath) as! InsightSectionCollectionViewCell
             cell.configure(
-                description: "From your last scan, your skin shows signs of improved hydration and reduced redness."
+                description: "From your last scan, your skin shows signs of improved hydration and reduced redness.",
+                highlightedDate: latestInsightDate()
             )
             cell.onActionTapped = { [weak self] in
                 self?.openInsights()
@@ -442,6 +483,13 @@ extension HomeViewController: HomeRoutineSectionCollectionViewCellDelegate {
         HomeCollectionView.collectionViewLayout.invalidateLayout()
         HomeCollectionView.reloadSections(IndexSet(integer: 3))
     }
+
+    func homeRoutineCell(_ cell: HomeRoutineSectionCollectionViewCell, didToggleStepAt index: Int, isCompleted: Bool) {
+        let stepIDs = currentRoutineStepIDs()
+        guard index >= 0, index < stepIDs.count else { return }
+        AppDataModel.shared.setStepDone(stepID: stepIDs[index], isDone: isCompleted, date: Date())
+        NotificationCenter.default.post(name: .routineCompletionDidChange, object: nil)
+    }
 }
 
 
@@ -480,7 +528,7 @@ extension HomeViewController {
     
     func generateInsightSection() -> NSCollectionLayoutSection {
         let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0)))
-        let group = NSCollectionLayoutGroup.horizontal(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(160)), subitems: [item])
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(220)), subitems: [item])
         let section = NSCollectionLayoutSection(group: group)
         section.boundarySupplementaryItems = [makeHeader(height:50)]
         return section

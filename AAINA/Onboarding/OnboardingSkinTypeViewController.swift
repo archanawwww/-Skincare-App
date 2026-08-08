@@ -34,6 +34,7 @@ class OnboardingSkinTypeViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        overrideUserInterfaceStyle = .light
         view.applyAINABackground()
         if onboardingData == nil {
             onboardingData = OnboardingData()
@@ -74,6 +75,8 @@ class OnboardingSkinTypeViewController: UIViewController {
             navigationItem.title = "Edit Skin Type"
             print("tZone buttons tags:", tZoneButtons.map { $0.tag })
             print("profile tZone:", AppDataModel.shared.userProfile?.tZone ?? "nil")
+        } else {
+            preselectSavedValues()
         }
         
     }
@@ -110,6 +113,7 @@ class OnboardingSkinTypeViewController: UIViewController {
         guard let tZone = onboardingData.tZone,
               let uZone = onboardingData.uZone,
               let cZone = onboardingData.cZone else { return }
+        AppDataModel.shared.saveOnboardingProgress(onboardingData)
         if isEditingProfile {
 
             // Force write new values directly
@@ -180,15 +184,15 @@ class OnboardingSkinTypeViewController: UIViewController {
             infoImageView.image = UIImage(named: "z")
 
         case 1:
-            infoTitleLabel.text = "U-Zone"
-            infoSubtitleLabel.text = "Cheeks & Jawline"
-            infoDescriptionLabel.text = "This area is typically normal to dry and needs hydration."
-            infoImageView.image = UIImage(named: "czone")
-
-        case 2:
             infoTitleLabel.text = "C-Zone"
             infoSubtitleLabel.text = "Around Mouth"
             infoDescriptionLabel.text = "This area is prone to dryness and sensitivity."
+            infoImageView.image = UIImage(named: "czone")
+
+        case 2:
+            infoTitleLabel.text = "U-Zone"
+            infoSubtitleLabel.text = "Cheeks & Jawline"
+            infoDescriptionLabel.text = "This area is typically normal to dry and needs hydration."
             infoImageView.image = UIImage(named: "uzone")
         default:
             break

@@ -33,7 +33,7 @@ class JournalViewController: UIViewController {
     private var allJournalEntries: [JournalEntry] = []
     var journalEntries: [JournalEntry] = []
 
-    // MARK: - Skin log entries
+    // MARK: - Skin report entries
     private var allSkinLogEntries: [SkinLogEntry] = []
     var skinLogEntries: [SkinLogEntry] = []
 
@@ -56,10 +56,15 @@ class JournalViewController: UIViewController {
         generateTimelineDates()
         collectionView.reloadData()
         setupTableView()
+        refreshRemoteEntries()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        title = "Journal"
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationItem.largeTitleDisplayMode = .always
         filterRemindersForSelectedDate()
         filterEntriesForSelectedDate()
         filterSkinLogForSelectedDate()
@@ -73,9 +78,25 @@ class JournalViewController: UIViewController {
         sizeTableHeaderView()
     }
 
+    private func refreshRemoteEntries() {
+        Task {
+            guard FirestoreSyncService.shared.currentUserID != nil else { return }
+            guard let state = try? await FirestoreSyncService.shared.loadUserState() else { return }
+            await MainActor.run {
+                self.allJournalEntries = state.journalEntries
+                self.saveEntries()
+                self.allSkinLogEntries = state.skinLogEntries
+                self.saveSkinLogEntries()
+                self.filterEntriesForSelectedDate()
+                self.filterSkinLogForSelectedDate()
+                self.tableView.reloadData()
+            }
+        }
+    }
+
     // MARK: - Buttons
     private func setupButtons() {
-        applyGlassConfig(to: skinLogButton, title: " Skin Log", icon: "waveform.path.ecg.text.clipboard")
+        applyGlassConfig(to: skinLogButton, title: " Skin Report", icon: "waveform.path.ecg.text.clipboard")
         applyGlassConfig(to: reminderButton, title: " Reminder", icon: "bell")
         applyGlassConfig(to: myNotesButton, title: " My Notes", icon: "note.text")
     }
@@ -169,6 +190,7 @@ class JournalViewController: UIViewController {
             guard let self else { return }
             self.allSkinLogEntries.insert(entry, at: 0)
             self.saveSkinLogEntries()
+            FirestoreSyncService.shared.saveSkinLogEntry(entry)
             self.filterSkinLogForSelectedDate()
             self.tableView.reloadSections(IndexSet(integer: 0), with: .automatic)
         }
@@ -181,6 +203,7 @@ class JournalViewController: UIViewController {
             guard let self else { return }
             self.allJournalEntries.insert(entry, at: 0)
             self.saveEntries()
+            FirestoreSyncService.shared.saveJournalEntry(entry)
             self.filterEntriesForSelectedDate()
             self.tableView.reloadSections(IndexSet(integer: 2), with: .automatic)
         }
@@ -403,7 +426,7 @@ class JournalViewController: UIViewController {
     }
 
     // MARK: - See More / See Less helpers
-    // Section mapping: 0 = Skin Log, 1 = Reminders, 2 = My Notes
+    // Section mapping: 0 = Skin Report, 1 = Reminders, 2 = My Notes
     private func visibleCount(for section: Int) -> Int {
         switch section {
         case 0:  return skinLogExpanded    ? skinLogEntries.count  : min(skinLogEntries.count, maxVisibleRows)
@@ -433,6 +456,7 @@ class JournalViewController: UIViewController {
             if let idx = self.allSkinLogEntries.firstIndex(where: { $0.id == updated.id }) {
                 self.allSkinLogEntries[idx] = updated
                 self.saveSkinLogEntries()
+                FirestoreSyncService.shared.saveSkinLogEntry(updated)
             }
             self.filterSkinLogForSelectedDate()
             self.tableView.reloadSections(IndexSet(integer: 0), with: .automatic)
@@ -441,6 +465,7 @@ class JournalViewController: UIViewController {
             guard let self else { return }
             self.allSkinLogEntries.removeAll { $0.id == id }
             self.saveSkinLogEntries()
+            FirestoreSyncService.shared.deleteSkinLogEntry(id: id)
             self.filterSkinLogForSelectedDate()
             self.tableView.reloadSections(IndexSet(integer: 0), with: .automatic)
         }
@@ -455,6 +480,7 @@ class JournalViewController: UIViewController {
             if let idx = self.allJournalEntries.firstIndex(where: { $0.id == updated.id }) {
                 self.allJournalEntries[idx] = updated
                 self.saveEntries()
+                FirestoreSyncService.shared.saveJournalEntry(updated)
             }
             self.filterEntriesForSelectedDate()
             self.tableView.reloadSections(IndexSet(integer: 2), with: .automatic)
@@ -463,6 +489,7 @@ class JournalViewController: UIViewController {
             guard let self else { return }
             self.allJournalEntries.removeAll { $0.id == id }
             self.saveEntries()
+            FirestoreSyncService.shared.deleteJournalEntry(id: id)
             self.filterEntriesForSelectedDate()
             self.tableView.reloadSections(IndexSet(integer: 2), with: .automatic)
         }
@@ -558,7 +585,7 @@ extension JournalViewController: UITableViewDataSource, UITableViewDelegate {
 
     func tableView(_ tableView: UITableView,
                    cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        // Section 0 = Skin Log, 1 = Reminders, 2 = My Notes
+        // Section 0 = Skin Report, 1 = Reminders, 2 = My Notes
         if isSectionEmpty(indexPath.section) {
             let cell = tableView.dequeueReusableCell(
                 withIdentifier: EmptyStateInfoCell.reuseIdentifier, for: indexPath
@@ -567,7 +594,7 @@ extension JournalViewController: UITableViewDataSource, UITableViewDelegate {
             case 0:
                 cell.configure(
                     icon: "waveform.path.ecg.text.clipboard",
-                    title: "No skin log for today",
+                    title: "No skin report for today",
                     subtitle: "Save entry to make a consultation skin report for dermatologist."
                 )
             case 1:
@@ -612,7 +639,7 @@ extension JournalViewController: UITableViewDataSource, UITableViewDelegate {
                    viewForHeaderInSection section: Int) -> UIView? {
         let header = Bundle.main.loadNibNamed("SectionHeaderView", owner: nil)?.first as! SectionHeaderView
         switch section {
-        case 0: header.configure(title: "Skin Log", subtitle: selectedDateLabel())
+        case 0: header.configure(title: "Skin Report", subtitle: selectedDateLabel())
         case 1: header.configure(title: "Reminders", subtitle: remindersHeaderSubtitle())
         default: header.configure(title: "My Notes", subtitle: selectedDateLabel())
         }
@@ -649,7 +676,7 @@ extension JournalViewController: UITableViewDataSource, UITableViewDelegate {
                    viewForFooterInSection section: Int) -> UIView? {
         switch section {
         case 0:
-            return makeFooter(title: "See all logs", chevron: true,
+            return makeFooter(title: "See all reports", chevron: true,
                               action: #selector(seeAllSkinLogTapped))
         case 1:
             guard needsToggleButton(for: section) else { return nil }
@@ -683,12 +710,13 @@ extension JournalViewController: UITableViewDataSource, UITableViewDelegate {
         if isSectionEmpty(indexPath.section) { return nil }
         let action = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, done in
             guard let self else { return done(false) }
-            // Section 0 = Skin Log, 1 = Reminders, 2 = My Notes
+            // Section 0 = Skin Report, 1 = Reminders, 2 = My Notes
             switch indexPath.section {
             case 0:
                 let removed = self.skinLogEntries.remove(at: indexPath.row)
                 self.allSkinLogEntries.removeAll { $0.id == removed.id }
                 self.saveSkinLogEntries()
+                FirestoreSyncService.shared.deleteSkinLogEntry(id: removed.id)
                 if self.skinLogEntries.count <= self.maxVisibleRows { self.skinLogExpanded = false }
             case 1:
                 let removed = self.reminders.remove(at: indexPath.row)
@@ -700,6 +728,7 @@ extension JournalViewController: UITableViewDataSource, UITableViewDelegate {
                 let removed = self.journalEntries.remove(at: indexPath.row)
                 self.allJournalEntries.removeAll { $0.id == removed.id }
                 self.saveEntries()
+                FirestoreSyncService.shared.deleteJournalEntry(id: removed.id)
                 if self.journalEntries.count <= self.maxVisibleRows { self.entriesExpanded = false }
             }
             tableView.performBatchUpdates({
@@ -714,13 +743,24 @@ extension JournalViewController: UITableViewDataSource, UITableViewDelegate {
         return UISwipeActionsConfiguration(actions: [action])
     }
 
-    // Tap entry → show notes / export skin log
+    // Tap entry -> show notes / edit skin report
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if isSectionEmpty(indexPath.section) { return }
         if indexPath.section == 0 {
-            // Skin log: offer PDF export
             let entry = skinLogEntries[indexPath.row]
-            exportSkinLogAsPDF(entry)
+            let vc = SkinLogViewController()
+            vc.existingEntry = entry
+            vc.onUpdate = { [weak self] updated in
+                guard let self else { return }
+                if let idx = self.allSkinLogEntries.firstIndex(where: { $0.id == updated.id }) {
+                    self.allSkinLogEntries[idx] = updated
+                    self.saveSkinLogEntries()
+                    FirestoreSyncService.shared.saveSkinLogEntry(updated)
+                    self.filterSkinLogForSelectedDate()
+                    self.tableView.reloadSections(IndexSet(integer: 0), with: .automatic)
+                }
+            }
+            navigationController?.pushViewController(vc, animated: true)
         } else if indexPath.section == 2 {
             let entry = journalEntries[indexPath.row]
             let vc = NotesEditorViewController()
@@ -730,6 +770,7 @@ extension JournalViewController: UITableViewDataSource, UITableViewDelegate {
                 if let idx = self.allJournalEntries.firstIndex(where: { $0.id == updated.id }) {
                     self.allJournalEntries[idx] = updated
                     self.saveEntries()
+                    FirestoreSyncService.shared.saveJournalEntry(updated)
                     self.filterEntriesForSelectedDate()
                     self.tableView.reloadSections(IndexSet(integer: 2), with: .automatic)
                 }
@@ -739,7 +780,7 @@ extension JournalViewController: UITableViewDataSource, UITableViewDelegate {
     }
 
     private func exportSkinLogAsPDF(_ entry: SkinLogEntry) {
-        let sheet = UIAlertController(title: "Skin Log", message: nil, preferredStyle: .actionSheet)
+        let sheet = UIAlertController(title: "Skin Report", message: nil, preferredStyle: .actionSheet)
         sheet.addAction(UIAlertAction(title: "Export as PDF", style: .default) { [weak self] _ in
             guard let self else { return }
             let pdf = SkinLogPDFExporter.generate(from: entry)
@@ -885,7 +926,7 @@ extension JournalViewController {
             allJournalEntries = entries
         }
 
-        // Load skin log entries
+        // Load skin report entries
         if let data = try? Data(contentsOf: Self.skinLogFileURL),
            let entries = try? decoder.decode([SkinLogEntry].self, from: data) {
             allSkinLogEntries = entries
@@ -904,5 +945,3 @@ extension JournalViewController {
         }
     }
 }
-
-

@@ -209,6 +209,7 @@ class WeeklyCheckInViewController: UIViewController {
         data.weekKey               = range.key
         data.weekStart             = range.start
         data.weekEnd               = range.end
+        data.createdAt             = Date()
         data.skinCondition         = skinConditionSection.selectedCondition
         data.concerns              = Array(skinConditionSection.selectedConcerns)
         data.sleepQuality          = lifestyleSection.selectedSleep
@@ -220,6 +221,22 @@ class WeeklyCheckInViewController: UIViewController {
         data.routineChangeReason   = changeRoutineSection.reason
 
         WeeklyCheckInManager.save(data)
+        let insightWeeklyInput = InsightWeeklyInput(
+            insightTitle: "Weekly Check-In",
+            skinFeel: data.skinCondition,
+            concerns: data.concerns,
+            lifestyleFactors: InsightLifestyleFactors(
+                sleepQuality: data.sleepQuality,
+                stressLevel: Double(data.stressLevel),
+                waterIntakeAvg: data.waterIntake,
+                waterGoal: nil
+            ),
+            productChanges: [],
+            correlationLogic: data.additionalNotes,
+            notes: data.additionalNotes
+        )
+
+        InsightStore.shared.saveWeeklyInput(insightWeeklyInput)
         if wantsRoutineChange {
             let detail = routineChangeReason.isEmpty
                 ? "No reason added."
@@ -231,10 +248,29 @@ class WeeklyCheckInViewController: UIViewController {
                 previousRoutine: AppDataModel.shared.aiRoutine,
                 newRoutine: nil
             )
+            regenerateRoutineAfterWeeklyCheckIn(reason: detail)
         }
         WeeklyCheckInManager.markCompletedThisWeek()
         onDismiss?()
         dismiss(animated: true)
+    }
+
+    private func regenerateRoutineAfterWeeklyCheckIn(reason: String) {
+        guard let onboardingData = AppDataModel.shared.onboardingDataFromProfile() else { return }
+        Task {
+            do {
+                let prompt = RoutinePromptBuilder.build(
+                    onboardingData: onboardingData,
+                    ingredients: AppDataModel.shared.allIngredients(),
+                    imageProvided: false
+                ) + "\nWeekly check-in reason for routine change: \(reason)"
+                let output = try await GeminiFreeService().generateRoutine(prompt: prompt, image: nil)
+                AppDataModel.shared.saveAIRoutine(output.routine, reason: "Weekly check-in: \(reason)")
+                AppDataModel.shared.saveLastFaceScanResult(output.scanResult)
+            } catch {
+                print("weekly routine regeneration failed:", error.localizedDescription)
+            }
+        }
     }
 }
 
@@ -242,6 +278,7 @@ class WeeklyCheckInViewController: UIViewController {
 
 enum WeeklyCheckInManager {
     private static let shownKey = "weeklyCheckIn_lastShownWeek"
+    private static let loginDateKey = "loginDate"
 
     // MARK: - Week range
 
@@ -277,6 +314,7 @@ enum WeeklyCheckInManager {
         all.append(data)
         let enc = JSONEncoder(); enc.dateEncodingStrategy = .iso8601
         if let d = try? enc.encode(all) { try? d.write(to: fileURL) }
+        FirestoreSyncService.shared.saveWeeklyCheckIn(data)
     }
 
     static func loadAll() -> [WeeklyCheckInData] {
@@ -294,14 +332,37 @@ enum WeeklyCheckInManager {
     // MARK: - Show logic
 
     static func shouldShow() -> Bool {
-        (UserDefaults.standard.string(forKey: shownKey) ?? "") != weekRange().key
+        let loginDate: Date
+        if let savedLoginDate = UserDefaults.standard.object(forKey: loginDateKey) as? Date {
+            loginDate = savedLoginDate
+        } else {
+            loginDate = Date()
+            UserDefaults.standard.set(loginDate, forKey: loginDateKey)
+        }
+
+        let daysSinceLogin = Calendar.current.dateComponents(
+            [.day],
+            from: Calendar.current.startOfDay(for: loginDate),
+            to: Calendar.current.startOfDay(for: Date())
+        ).day ?? 0
+
+        guard daysSinceLogin >= 7 else { return false }
+
+        let interval = daysSinceLogin / 7
+        return UserDefaults.standard.integer(forKey: shownKey) != interval
     }
 
     static func markCompletedThisWeek() {
-        UserDefaults.standard.set(weekRange().key, forKey: shownKey)
+        markShownThisWeek()
     }
 
     static func markShownThisWeek() {
-        UserDefaults.standard.set(weekRange().key, forKey: shownKey)
+        let loginDate = (UserDefaults.standard.object(forKey: loginDateKey) as? Date) ?? Date()
+        let daysSinceLogin = Calendar.current.dateComponents(
+            [.day],
+            from: Calendar.current.startOfDay(for: loginDate),
+            to: Calendar.current.startOfDay(for: Date())
+        ).day ?? 0
+        UserDefaults.standard.set(max(daysSinceLogin / 7, 0), forKey: shownKey)
     }
 }

@@ -9,6 +9,7 @@ import UIKit
 
 protocol HomeRoutineSectionCollectionViewCellDelegate: AnyObject {
     func homeRoutineCell(_ cell: HomeRoutineSectionCollectionViewCell, didChangeSegment index: Int)
+    func homeRoutineCell(_ cell: HomeRoutineSectionCollectionViewCell, didToggleStepAt index: Int, isCompleted: Bool)
 }
 
 final class HomeRoutineSectionCollectionViewCell: UICollectionViewCell {
@@ -83,14 +84,13 @@ final class HomeRoutineSectionCollectionViewCell: UICollectionViewCell {
     
     func configure(
         steps: [String],
-        completedCount: Int,
+        completedStates: [Bool],
         selectedSegment: Int
     ) {
         self.steps = steps
         self.selectedSegment = selectedSegment
-        
-        completedStates = steps.enumerated().map { index, _ in
-            index < completedCount
+        self.completedStates = steps.enumerated().map { index, _ in
+            index < completedStates.count ? completedStates[index] : false
         }
         
         segmentControl.selectedSegmentIndex = selectedSegment
@@ -203,5 +203,6 @@ final class HomeRoutineSectionCollectionViewCell: UICollectionViewCell {
         
         completedStates[index].toggle()
         updateStatusButtonUI(sender, isCompleted: completedStates[index])
+        delegate?.homeRoutineCell(self, didToggleStepAt: index, isCompleted: completedStates[index])
     }
 }

@@ -27,26 +27,27 @@
                                 </constraints>
                             </imageView>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Priya" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" translatesAutoresizingMaskIntoConstraints="NO" id="Hdz-gM-RSZ">
-                                <rect key="frame" x="124" y="28" width="85" height="48"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="40"/>
+                                <rect key="frame" x="124" y="24" width="85" height="37"/>
+                                <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="31"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="oVG-wS-NOn">
-                                <rect key="frame" x="221" y="37" width="78" height="30"/>
+                                <rect key="frame" x="124" y="61" width="120" height="28"/>
                                 <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="21 yrs" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" translatesAutoresizingMaskIntoConstraints="NO" id="j5C-PK-i3V">
-                                        <rect key="frame" x="16.666666666666657" y="5" width="45" height="20.333333333333332"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="21 years" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" translatesAutoresizingMaskIntoConstraints="NO" id="j5C-PK-i3V">
+                                        <rect key="frame" x="0.0" y="0.5" width="120" height="27"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="23"/>
                                         <nil key="textColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                 </subviews>
                                 <constraints>
                                     <constraint firstItem="j5C-PK-i3V" firstAttribute="centerY" secondItem="oVG-wS-NOn" secondAttribute="centerY" id="10J-Xh-MDT"/>
-                                    <constraint firstAttribute="height" constant="30" id="4hb-fH-uEA"/>
-                                    <constraint firstAttribute="width" constant="78" id="QSc-H3-NHB"/>
-                                    <constraint firstItem="j5C-PK-i3V" firstAttribute="centerX" secondItem="oVG-wS-NOn" secondAttribute="centerX" id="gCe-YU-cUy"/>
+                                    <constraint firstAttribute="height" constant="28" id="4hb-fH-uEA"/>
+                                    <constraint firstAttribute="width" constant="120" id="QSc-H3-NHB"/>
+                                    <constraint firstItem="j5C-PK-i3V" firstAttribute="leading" secondItem="oVG-wS-NOn" secondAttribute="leading" id="AgL-fN-age"/>
+                                    <constraint firstAttribute="trailing" secondItem="j5C-PK-i3V" secondAttribute="trailing" id="Age-TRAIL"/>
                                 </constraints>
                             </view>
                             <stackView opaque="NO" contentMode="scaleToFill" distribution="fillEqually" spacing="6" translatesAutoresizingMaskIntoConstraints="NO" id="dI3-h7-vvW">
@@ -140,14 +141,15 @@
                         <constraints>
                             <constraint firstItem="Bas-2N-X17" firstAttribute="leading" secondItem="iMb-2K-u4k" secondAttribute="leading" constant="24" id="6dd-FO-d6X"/>
                             <constraint firstItem="Bas-2N-X17" firstAttribute="centerY" secondItem="iMb-2K-u4k" secondAttribute="centerY" id="8L2-Sx-GXG"/>
-                            <constraint firstItem="Hdz-gM-RSZ" firstAttribute="top" secondItem="iMb-2K-u4k" secondAttribute="top" constant="28" id="AbD-1F-91n"/>
+                            <constraint firstItem="Hdz-gM-RSZ" firstAttribute="top" secondItem="iMb-2K-u4k" secondAttribute="top" constant="24" id="AbD-1F-91n"/>
                             <constraint firstItem="Hdz-gM-RSZ" firstAttribute="leading" secondItem="Bas-2N-X17" secondAttribute="trailing" constant="20" id="CzI-RM-bR5"/>
                             <constraint firstItem="dI3-h7-vvW" firstAttribute="leading" secondItem="Hdz-gM-RSZ" secondAttribute="leading" id="I0M-qr-hhO"/>
-                            <constraint firstItem="oVG-wS-NOn" firstAttribute="leading" secondItem="Hdz-gM-RSZ" secondAttribute="trailing" constant="12" id="IQC-Pa-AX4"/>
+                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="Hdz-gM-RSZ" secondAttribute="trailing" constant="24" id="Name-trail"/>
+                            <constraint firstItem="oVG-wS-NOn" firstAttribute="leading" secondItem="Hdz-gM-RSZ" secondAttribute="leading" id="IQC-Pa-AX4"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="oVG-wS-NOn" secondAttribute="trailing" constant="24" id="M84-yx-9Ze"/>
-                            <constraint firstItem="dI3-h7-vvW" firstAttribute="top" secondItem="Hdz-gM-RSZ" secondAttribute="bottom" constant="16" id="NfD-kZ-wXF"/>
+                            <constraint firstItem="oVG-wS-NOn" firstAttribute="top" secondItem="Hdz-gM-RSZ" secondAttribute="bottom" constant="-2" id="Age-under-name"/>
+                            <constraint firstItem="dI3-h7-vvW" firstAttribute="top" secondItem="oVG-wS-NOn" secondAttribute="bottom" constant="10" id="NfD-kZ-wXF"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="dI3-h7-vvW" secondAttribute="trailing" constant="24" id="Vwh-ot-61d"/>
-                            <constraint firstItem="oVG-wS-NOn" firstAttribute="centerY" secondItem="Hdz-gM-RSZ" secondAttribute="centerY" id="eEa-52-TsQ"/>
                         </constraints>
                     </view>
                 </subviews>
@@ -156,8 +158,8 @@
             <constraints>
                 <constraint firstItem="iMb-2K-u4k" firstAttribute="leading" secondItem="gTV-IL-0wX" secondAttribute="leading" constant="16" id="5o2-dS-PVH"/>
                 <constraint firstAttribute="trailing" secondItem="iMb-2K-u4k" secondAttribute="trailing" constant="16" id="7rl-Su-zuA"/>
-                <constraint firstItem="iMb-2K-u4k" firstAttribute="top" secondItem="gTV-IL-0wX" secondAttribute="top" constant="14" id="M9R-eH-fmf"/>
-                <constraint firstAttribute="bottom" secondItem="iMb-2K-u4k" secondAttribute="bottom" constant="14" id="xgN-zM-R0Z"/>
+                <constraint firstItem="iMb-2K-u4k" firstAttribute="top" secondItem="gTV-IL-0wX" secondAttribute="top" constant="8" id="M9R-eH-fmf"/>
+                <constraint firstAttribute="bottom" secondItem="iMb-2K-u4k" secondAttribute="bottom" constant="8" id="xgN-zM-R0Z"/>
             </constraints>
             <size key="customSize" width="393" height="190"/>
             <connections>

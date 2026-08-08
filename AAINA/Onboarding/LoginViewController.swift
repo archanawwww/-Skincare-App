@@ -13,7 +13,6 @@ class LoginViewController: UIViewController {
     @IBOutlet weak var subtitleLabel: UILabel!
     @IBOutlet weak var appleButton: UIButton!
     @IBOutlet weak var googleButton: UIButton!
-    @IBOutlet weak var guestButton: UIButton!
     @IBOutlet weak var privacyLabel: UILabel!
 
     // Lottie view — added in code since storyboard cant render it directly
@@ -85,9 +84,37 @@ class LoginViewController: UIViewController {
             }
 
             guard let user = result?.user else { return }
+            guard let idToken = user.idToken?.tokenString else {
+                print("google sign in missing id token")
+                return
+            }
             let name = user.profile?.name ?? "User"
-            self.saveLogin(name: name)
-            self.goToOnboarding()
+            let accessToken = user.accessToken.tokenString
+            Task {
+                do {
+                    let firebaseUser = try await FirestoreSyncService.shared.signInWithGoogle(
+                        idToken: idToken,
+                        accessToken: accessToken
+                    )
+                    let exists = try await FirestoreSyncService.shared.userDocumentExists(uid: firebaseUser.uid)
+                    await FirestoreSyncService.shared.upsertUserShell(name: name, isGuest: false)
+                    let state = try await FirestoreSyncService.shared.loadUserState()
+                    await AppDataModel.shared.applyRemoteUserState(state)
+                    await MainActor.run {
+                        self.saveLogin(name: name, isGuest: false)
+                        if exists, state.profile != nil {
+                            self.goToHome()
+                        } else {
+                            self.goToOnboarding()
+                        }
+                    }
+                } catch {
+                    await MainActor.run {
+                        print("firebase google sign in error:", error.localizedDescription)
+                        self.showLoginError(error)
+                    }
+                }
+            }
         }
     }
 
@@ -97,7 +124,7 @@ class LoginViewController: UIViewController {
     @IBAction func appleTapped(_ sender: UIButton) {
         let alert = UIAlertController(
             title: "Coming Soon",
-            message: "Sign In with Apple will be available in a future release. Please use Google Sign-In or continue as a guest.",
+            message: "Sign In with Apple will be available in a future release. Please use Google Sign-In.",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "OK", style: .default))
@@ -112,18 +139,16 @@ class LoginViewController: UIViewController {
         // controller.performRequests()
     }
 
-    // MARK: - Guest Login
-    @IBAction func guestTapped(_ sender: UIButton) {
-        saveLogin(name: "Guest")
-        goToOnboarding()
-    }
-
     // MARK: - Save Login Info
     // saving login state and name to userdefaults
     // member since year is only set once — never overwritten
-    private func saveLogin(name: String) {
+    private func saveLogin(name: String, isGuest: Bool = false) {
         UserDefaults.standard.set(true, forKey: "isLoggedIn")
         UserDefaults.standard.set(name, forKey: "userName")
+        UserDefaults.standard.set(isGuest, forKey: "isGuestLogin")
+        if UserDefaults.standard.object(forKey: "loginDate") == nil {
+            UserDefaults.standard.set(Date(), forKey: "loginDate")
+        }
 
         if UserDefaults.standard.integer(forKey: "member_since_year") == 0 {
             let year = Calendar.current.component(.year, from: Date())
@@ -144,6 +169,7 @@ class LoginViewController: UIViewController {
         }
 
         dobVC.dataModel = AppDataModel.shared
+        dobVC.onboardingData = AppDataModel.shared.loadOnboardingProgress() ?? OnboardingData()
 
         let nav = UINavigationController(rootViewController: dobVC)
 
@@ -152,6 +178,30 @@ class LoginViewController: UIViewController {
             window.rootViewController = nav
             window.makeKeyAndVisible()
         }
+    }
+
+    private func goToHome() {
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        guard let tabBarVC = storyboard.instantiateViewController(
+            withIdentifier: "MainTabBarViewController"
+        ) as? MainTabBarViewController else { return }
+        tabBarVC.dataModel = AppDataModel.shared
+
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            window.rootViewController = tabBarVC
+            window.makeKeyAndVisible()
+        }
+    }
+
+    private func showLoginError(_ error: Error) {
+        let alert = UIAlertController(
+            title: "Login failed",
+            message: error.localizedDescription,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 

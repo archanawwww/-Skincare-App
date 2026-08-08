@@ -37,7 +37,7 @@ enum SkinLogPDFExporter {
                 .font: UIFont.systemFont(ofSize: 22, weight: .bold),
                 .foregroundColor: UIColor.white
             ]
-            "Skin Log Report".draw(at: CGPoint(x: margin, y: 22), withAttributes: titleAttrs)
+            "Skin Report".draw(at: CGPoint(x: margin, y: 22), withAttributes: titleAttrs)
             y = 90
 
             // ── Date
@@ -72,11 +72,22 @@ enum SkinLogPDFExporter {
                 y += noteHeight + 16
             }
 
-            // ── Photo count note
+            // ── Photos
             if !entry.photoFileNames.isEmpty {
                 y += 4
-                draw(label: "Photos attached", value: "\(entry.photoFileNames.count)",
-                     x: margin, y: &y, pageWidth: pageWidth, margin: margin)
+                drawSectionTitle("Photos", x: margin, y: &y)
+                drawPhotoGrid(
+                    fileNames: entry.photoFileNames,
+                    x: margin,
+                    y: &y,
+                    maxWidth: pageWidth - margin * 2,
+                    pageHeight: pageHeight,
+                    bottomLimit: pageHeight - 70,
+                    beginNewPage: {
+                        ctx.beginPage()
+                        return margin
+                    }
+                )
             }
 
             // ── Footer
@@ -121,7 +132,7 @@ enum SkinLogPDFExporter {
             let headerRect = CGRect(x: 0, y: 0, width: pageWidth, height: 110)
             accentColor.setFill(); UIRectFill(headerRect)
 
-            "Skin Log Report".draw(
+            "Skin Report".draw(
                 at: CGPoint(x: margin, y: 24),
                 withAttributes: [.font: UIFont.systemFont(ofSize: 24, weight: .bold),
                                  .foregroundColor: UIColor.white])
@@ -149,15 +160,15 @@ enum SkinLogPDFExporter {
             div.lineWidth = 1; div.stroke(); y += 28
 
             // ── Entries ─────────────────────────────────────────
-            func newPage() {
+            func newPage() -> CGFloat {
                 ctx.beginPage()
                 let stripRect = CGRect(x: 0, y: 0, width: pageWidth, height: 36)
                 accentColor.withAlphaComponent(0.12).setFill(); UIRectFill(stripRect)
-                "AAINA Skin Log Report".draw(
+                "AAINA Skin Report".draw(
                     at: CGPoint(x: margin, y: 10),
                     withAttributes: [.font: UIFont.systemFont(ofSize: 11, weight: .medium),
                                      .foregroundColor: roseColor])
-                y = 54
+                return 54
             }
 
             let noteAttrs: [NSAttributedString.Key: Any] = [
@@ -166,7 +177,7 @@ enum SkinLogPDFExporter {
 
             for entry in sorted {
                 let needed = entryEstimate(entry: entry, width: pageWidth - margin * 2)
-                if y + needed > pageHeight - 60 { newPage() }
+                if y + needed > pageHeight - 60 { y = newPage() }
 
                 // Card background
                 let cardH = needed
@@ -218,10 +229,17 @@ enum SkinLogPDFExporter {
 
                 // Photos
                 if !entry.photoFileNames.isEmpty {
-                    "\(entry.photoFileNames.count) photo(s) attached".draw(
-                        at: CGPoint(x: margin, y: y),
-                        withAttributes: [.font: UIFont.systemFont(ofSize: 11),
-                                         .foregroundColor: UIColor.gray]); y += 16
+                    drawPhotoGrid(
+                        fileNames: entry.photoFileNames,
+                        x: margin,
+                        y: &y,
+                        maxWidth: pageWidth - margin * 2,
+                        pageHeight: pageHeight,
+                        bottomLimit: pageHeight - 70,
+                        thumbSize: CGSize(width: 86, height: 64),
+                        spacing: 8,
+                        beginNewPage: newPage
+                    )
                 }
 
                 y += 26
@@ -249,7 +267,11 @@ enum SkinLogPDFExporter {
                 with: CGSize(width: width, height: 120),
                 options: .usesLineFragmentOrigin, attributes: attrs, context: nil).height) + 4
         }
-        if !entry.photoFileNames.isEmpty { h += 16 }
+        if !entry.photoFileNames.isEmpty {
+            let columns = 5
+            let rows = Int(ceil(Double(entry.photoFileNames.count) / Double(columns)))
+            h += CGFloat(rows) * 64 + CGFloat(max(rows - 1, 0)) * 8 + 8
+        }
         return h
     }
 
@@ -289,5 +311,66 @@ enum SkinLogPDFExporter {
         ]
         title.draw(at: CGPoint(x: x, y: y), withAttributes: attrs)
         y += 20
+    }
+
+    private static func drawPhotoGrid(fileNames: [String],
+                                      x: CGFloat,
+                                      y: inout CGFloat,
+                                      maxWidth: CGFloat,
+                                      pageHeight: CGFloat,
+                                      bottomLimit: CGFloat,
+                                      thumbSize: CGSize = CGSize(width: 110, height: 82),
+                                      spacing: CGFloat = 10,
+                                      beginNewPage: () -> CGFloat) {
+        let images = fileNames.compactMap { JournalPhotoStore.load(named: $0) }
+        guard !images.isEmpty else { return }
+
+        let columns = max(1, Int((maxWidth + spacing) / (thumbSize.width + spacing)))
+        for (index, image) in images.enumerated() {
+            if index > 0 && index % columns == 0 {
+                y += thumbSize.height + spacing
+            }
+
+            if y + thumbSize.height > bottomLimit {
+                y = beginNewPage()
+            }
+
+            let column = index % columns
+            let thumbX = x + CGFloat(column) * (thumbSize.width + spacing)
+            let rect = CGRect(origin: CGPoint(x: thumbX, y: y), size: thumbSize)
+            drawRoundedImage(image, in: rect)
+        }
+
+        y += thumbSize.height + 10
+    }
+
+    private static func drawRoundedImage(_ image: UIImage, in rect: CGRect) {
+        guard let cgImage = image.cgImage else { return }
+
+        let path = UIBezierPath(roundedRect: rect, cornerRadius: 8)
+        UIColor.white.setFill()
+        path.fill()
+
+        UIGraphicsGetCurrentContext()?.saveGState()
+        path.addClip()
+        image.draw(in: aspectFillRect(for: CGSize(width: cgImage.width, height: cgImage.height), in: rect))
+        UIGraphicsGetCurrentContext()?.restoreGState()
+
+        UIColor.white.withAlphaComponent(0.9).setStroke()
+        path.lineWidth = 1
+        path.stroke()
+    }
+
+    private static func aspectFillRect(for imageSize: CGSize, in rect: CGRect) -> CGRect {
+        guard imageSize.width > 0, imageSize.height > 0 else { return rect }
+        let scale = max(rect.width / imageSize.width, rect.height / imageSize.height)
+        let width = imageSize.width * scale
+        let height = imageSize.height * scale
+        return CGRect(
+            x: rect.midX - width / 2,
+            y: rect.midY - height / 2,
+            width: width,
+            height: height
+        )
     }
 }

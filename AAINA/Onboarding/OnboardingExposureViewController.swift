@@ -14,6 +14,7 @@ class OnboardingExposureViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        overrideUserInterfaceStyle = .light
 
         view.applyAINABackground()
 
@@ -24,6 +25,13 @@ class OnboardingExposureViewController: UIViewController {
 
         setupButtons()
         setupNextButton()
+        if let exposure = onboardingData.uvExposure {
+            let tag = tagFrom(exposure)
+            if let button = exposureButtons.first(where: { $0.tag == tag }) {
+                updateSelection(selected: button)
+                enableNextButton()
+            }
+        }
     }
 
     // MARK: - UI Setup
@@ -88,7 +96,7 @@ class OnboardingExposureViewController: UIViewController {
 
         guard onboardingData.uvExposure != nil else { return }
 
-        saveToUserDefaults(onboardingData)
+        AppDataModel.shared.saveOnboardingProgress(onboardingData)
 
         let cameraVC = OnboardingCameraViewController()
         cameraVC.onboardingData = onboardingData
@@ -154,6 +162,15 @@ class OnboardingExposureViewController: UIViewController {
         case 2: return .high
         case 3: return .veryHigh
         default: return .moderate
+        }
+    }
+
+    private func tagFrom(_ exposure: UVExposureLevel) -> Int {
+        switch exposure {
+        case .rarely: return 0
+        case .moderate: return 1
+        case .high: return 2
+        case .veryHigh: return 3
         }
     }
 }

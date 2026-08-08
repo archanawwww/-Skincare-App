@@ -252,7 +252,7 @@ struct JournalEntry: Codable {
     }
 }
 
-// MARK: - Skin Log Entry
+// MARK: - Skin Report Entry
 
 struct SkinLogEntry: Codable {
     let id: String

@@ -29,6 +29,7 @@ class OnboardingDOBViewController: UIViewController,
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        overrideUserInterfaceStyle = .light
 
         view.applyAINABackground()
         setupDOBCard()
@@ -40,9 +41,16 @@ class OnboardingDOBViewController: UIViewController,
         yearPicker.dataSource = self
         yearPicker.setValue(UIColor.ainaTextPrimary, forKey: "textColor")
 
-        selectedYear = nil
-        nextButton.isEnabled = false
-        nextButton.alpha = 0.5
+        selectedYear = onboardingData.birthYear
+        if let savedYear = selectedYear,
+           let index = years.firstIndex(of: savedYear) {
+            yearPicker.selectRow(index, inComponent: 0, animated: false)
+            nextButton.isEnabled = true
+            nextButton.alpha = 1.0
+        } else {
+            nextButton.isEnabled = false
+            nextButton.alpha = 0.5
+        }
 
         // isEditingProfile block AFTER picker is ready
         if isEditingProfile {
@@ -172,7 +180,7 @@ class OnboardingDOBViewController: UIViewController,
     }
     func pickerView(_ pickerView: UIPickerView,
                     attributedTitleForRow row: Int,
-                    forComponent component: Int) -> NSAttributedString {
+                    forComponent component: Int) -> NSAttributedString? {
 
         let year = "\(years[row])"
 
@@ -203,6 +211,7 @@ class OnboardingDOBViewController: UIViewController,
     @IBAction func nextButtonTapped(_ sender: UIButton) {
         guard let year = selectedYear else { return }
         onboardingData.birthYear = year
+        AppDataModel.shared.saveOnboardingProgress(onboardingData)
 
         if isEditingProfile {
             var od = OnboardingData()

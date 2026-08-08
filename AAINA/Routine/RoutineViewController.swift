@@ -12,8 +12,6 @@ final class RoutineViewController: UIViewController {
         private var steps: [RoutineStep] = []
         private var aiSteps: [AIRoutineStep] = []
         private var aiOutput: AIRoutineOutput?
-        private var morningCheckedSteps: Set<String> = []
-        private var eveningCheckedSteps: Set<String> = []
         private let headerDivider = UIView()
         private let peachOverlay = UIView()
 
@@ -40,6 +38,12 @@ final class RoutineViewController: UIViewController {
                 self,
                 selector: #selector(handleStepExpand(_:)),
                 name: .stepCellDidToggleExpand,
+                object: nil
+            )
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(handleRoutineCompletionDidChange),
+                name: .routineCompletionDidChange,
                 object: nil
             )
 
@@ -89,7 +93,7 @@ final class RoutineViewController: UIViewController {
 
 
 
-    @objc private func handleStepExpand(_ notification: Notification) {
+        @objc private func handleStepExpand(_ notification: Notification) {
         guard let tappedCell = notification.object as? StepCollectionViewCell else { return }
         for cell in collectionView.visibleCells.compactMap({ $0 as? StepCollectionViewCell }) {
             guard cell !== tappedCell else { continue }
@@ -99,6 +103,10 @@ final class RoutineViewController: UIViewController {
             collectionView.collectionViewLayout.invalidateLayout()
         }, completion: nil)
     
+        }
+
+        @objc private func handleRoutineCompletionDidChange() {
+            collectionView.reloadSections(IndexSet(integer: 2))
         }
 
 
@@ -136,6 +144,7 @@ final class RoutineViewController: UIViewController {
                 if let cell = self.collectionView.cellForItem(at: IndexPath(item: 0, section: 0)) as? TimelineContainerCollectionViewCell {
                     cell.updateSelectedDate(date)
                 }
+                self.collectionView.reloadSections(IndexSet(integer: 2))
             }
 
             present(vc, animated: false)
@@ -238,7 +247,10 @@ final class RoutineViewController: UIViewController {
                     withReuseIdentifier: "TimelineContainerCollectionViewCell",
                     for: indexPath
                 ) as! TimelineContainerCollectionViewCell
-                cell.onDateSelected = { [weak self] date in self?.selectedDate = date }
+                cell.onDateSelected = { [weak self] date in
+                    self?.selectedDate = date
+                    self?.collectionView.reloadSections(IndexSet(integer: 2))
+                }
                 return cell
 
             case 1:
@@ -254,7 +266,9 @@ final class RoutineViewController: UIViewController {
                     ) as! ProgressCardCollectionViewCell
 
                     let total   = aiOutput != nil ? aiSteps.count : steps.count
-                    let checked = (selectedSegment == 0 ? morningCheckedSteps : eveningCheckedSteps).count
+                    let visibleIDs = aiOutput != nil ? aiSteps.map { $0.id } : steps.map { $0.id }
+                    let completedIDs = AppDataModel.shared.completedStepIDs(date: selectedDate)
+                    let checked = visibleIDs.filter { completedIDs.contains($0) }.count
                     cell.configure(completed: checked, total: total)
                     return cell
                 }
@@ -266,11 +280,9 @@ final class RoutineViewController: UIViewController {
                     for: indexPath
                 ) as! StepCollectionViewCell
 
-                let currentChecked = selectedSegment == 0 ? morningCheckedSteps : eveningCheckedSteps
-
                 if aiOutput != nil {
                     let aiStep    = aiSteps[index]
-                    let isChecked = currentChecked.contains(aiStep.id)
+                    let isChecked = AppDataModel.shared.isStepDone(stepID: aiStep.id, date: selectedDate)
 
                     cell.configure(aiStep: aiStep, isChecked: isChecked)
 
@@ -280,20 +292,22 @@ final class RoutineViewController: UIViewController {
                         UIApplication.shared.open(url)
                     }
 
+                    cell.shouldAllowCheck = { [weak self] _ in
+                        guard let self else { return false }
+                        return AppDataModel.shared.isRoutineCompletionEditable(date: self.selectedDate)
+                    }
+
                     cell.checkChanged = { [weak self] checked in
                         guard let self = self else { return }
-                        if self.selectedSegment == 0 {
-                            if checked { self.morningCheckedSteps.insert(aiStep.id) } else { self.morningCheckedSteps.remove(aiStep.id) }
-                        } else {
-                            if checked { self.eveningCheckedSteps.insert(aiStep.id) } else { self.eveningCheckedSteps.remove(aiStep.id) }
-                        }
+                        AppDataModel.shared.setStepDone(stepID: aiStep.id, isDone: checked, date: self.selectedDate)
+                        NotificationCenter.default.post(name: .routineCompletionDidChange, object: nil)
                         self.collectionView.reloadItems(at: [IndexPath(item: 0, section: 2), indexPath])
                     }
 
                 } else {
                     let step        = steps[index]
                     let ingredients = dataModel.ingredientNames(for: step)
-                    let isChecked   = currentChecked.contains(step.id)
+                    let isChecked   = AppDataModel.shared.isStepDone(stepID: step.id, date: selectedDate)
 
                     cell.configure(step: step, ingredients: ingredients, isChecked: isChecked)
 
@@ -303,13 +317,15 @@ final class RoutineViewController: UIViewController {
                         UIApplication.shared.open(url)
                     }
 
+                    cell.shouldAllowCheck = { [weak self] _ in
+                        guard let self else { return false }
+                        return AppDataModel.shared.isRoutineCompletionEditable(date: self.selectedDate)
+                    }
+
                     cell.checkChanged = { [weak self] checked in
                         guard let self = self else { return }
-                        if self.selectedSegment == 0 {
-                            if checked { self.morningCheckedSteps.insert(step.id) } else { self.morningCheckedSteps.remove(step.id) }
-                        } else {
-                            if checked { self.eveningCheckedSteps.insert(step.id) } else { self.eveningCheckedSteps.remove(step.id) }
-                        }
+                        AppDataModel.shared.setStepDone(stepID: step.id, isDone: checked, date: self.selectedDate)
+                        NotificationCenter.default.post(name: .routineCompletionDidChange, object: nil)
                         self.collectionView.reloadItems(at: [IndexPath(item: 0, section: 2), indexPath])
                     }
                 }

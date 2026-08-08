@@ -549,7 +549,7 @@ final class ChangeRoutineSectionView: UIView {
         btn.layer.cornerRadius = 14
         btn.layer.borderWidth  = 1
         btn.layer.borderColor  = UIColor.ainaTextTertiary.withAlphaComponent(0.3).cgColor
-        btn.contentEdgeInsets  = UIEdgeInsets(top: 6, left: 14, bottom: 6, right: 14)
+        btn.setValue(NSValue(uiEdgeInsets: UIEdgeInsets(top: 6, left: 14, bottom: 6, right: 14)), forKey: "contentEdgeInsets")
         btn.heightAnchor.constraint(equalToConstant: 32).isActive = true
         btn.addTarget(self, action: #selector(stepPillTapped(_:)), for: .touchUpInside)
         return btn

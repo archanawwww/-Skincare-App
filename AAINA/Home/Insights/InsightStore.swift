@@ -13,10 +13,16 @@ final class InsightStore {
 
     func entries(on date: Date) -> [InsightEntry] {
         let calendar = Calendar.current
-        return allEntries().filter { entry in
+        let orderedEntries = bundledEntries() + persistedEntries()
+        return orderedEntries.enumerated().filter { _, entry in
             guard let value = entry.dateValue else { return false }
             return calendar.isDate(value, inSameDayAs: date)
-        }
+        }.sorted { lhs, rhs in
+            let leftDate = lhs.element.dateValue ?? .distantPast
+            let rightDate = rhs.element.dateValue ?? .distantPast
+            if leftDate == rightDate { return lhs.offset > rhs.offset }
+            return leftDate > rightDate
+        }.map(\.element)
     }
 
     func hasFaceScan(on date: Date) -> Bool {
@@ -28,7 +34,8 @@ final class InsightStore {
     }
 
     func saveFaceScan(image: UIImage?, result: FaceScanResult) {
-        let dateString = InsightDateFormatter.shared.string(from: Date())
+        let now = Date()
+        let dateString = InsightDateFormatter.shared.string(from: now)
         let localImageName = image.flatMap(saveImage)
         let features = result.concerns.map {
             InsightDetectedFeature(
@@ -59,6 +66,26 @@ final class InsightStore {
         )
 
         var history = persistedEntries()
+        removeEntries(from: &history, on: now, matching: { $0.hasFaceScan })
+        history.append(entry)
+        persist(history)
+    }
+    func saveWeeklyInput(_ weeklyInput: InsightWeeklyInput) {
+
+        let now = Date()
+
+        let entry = InsightEntry(
+            date: InsightDateFormatter.shared.string(from: now),
+            scanType: .weeklyInput,
+            scanImageURL: nil,
+            localImageName: nil,
+            aiDetection: .empty,
+            analysisReport: nil,
+            weeklyInputData: weeklyInput
+        )
+
+        var history = persistedEntries()
+        removeEntries(from: &history, on: now, matching: { $0.hasWeeklyInput })
         history.append(entry)
         persist(history)
     }
@@ -93,6 +120,32 @@ final class InsightStore {
     private func persist(_ entries: [InsightEntry]) {
         guard let data = try? JSONEncoder().encode(entries) else { return }
         try? data.write(to: persistedURL)
+    }
+
+    private func removeEntries(from entries: inout [InsightEntry],
+                               on date: Date,
+                               matching predicate: (InsightEntry) -> Bool) {
+        let calendar = Calendar.current
+        let removedImageNames = entries.compactMap { entry -> String? in
+            guard
+                predicate(entry),
+                let value = entry.dateValue,
+                calendar.isDate(value, inSameDayAs: date)
+            else { return nil }
+            return entry.localImageName
+        }
+
+        entries.removeAll { entry in
+            guard
+                predicate(entry),
+                let value = entry.dateValue
+            else { return false }
+            return calendar.isDate(value, inSameDayAs: date)
+        }
+
+        for imageName in removedImageNames {
+            try? FileManager.default.removeItem(at: imagesDirectory.appendingPathComponent(imageName))
+        }
     }
 
     private func saveImage(_ image: UIImage) -> String? {

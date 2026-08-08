@@ -33,7 +33,8 @@ struct InsightEntry: Codable {
     }
 
     var hasFaceScan: Bool {
-        !aiDetection.detectedFeatures.isEmpty ||
+        guard scanType == .normal else { return false }
+        return !aiDetection.detectedFeatures.isEmpty ||
         !(analysisReport?.comparativeInsights ?? []).isEmpty ||
         scanImageURL != nil ||
         localImageName != nil
@@ -162,6 +163,23 @@ struct InsightWeeklyInput: Codable {
         case correlationLogic = "correlation_logic"
         case notes
     }
+    init(
+        insightTitle: String?,
+        skinFeel: String?,
+        concerns: [String],
+        lifestyleFactors: InsightLifestyleFactors,
+        productChanges: [InsightProductChange],
+        correlationLogic: String?,
+        notes: String?
+    ) {
+        self.insightTitle = insightTitle
+        self.skinFeel = skinFeel
+        self.concerns = concerns
+        self.lifestyleFactors = lifestyleFactors
+        self.productChanges = productChanges
+        self.correlationLogic = correlationLogic
+        self.notes = notes
+    }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -180,6 +198,17 @@ struct InsightLifestyleFactors: Codable {
     let stressLevel: Double?
     let waterIntakeAvg: Int?
     let waterGoal: Int?
+    init(
+        sleepQuality: Int?,
+        stressLevel: Double?,
+        waterIntakeAvg: Int?,
+        waterGoal: Int?
+    ) {
+        self.sleepQuality = sleepQuality
+        self.stressLevel = stressLevel
+        self.waterIntakeAvg = waterIntakeAvg
+        self.waterGoal = waterGoal
+    }
 
     enum CodingKeys: String, CodingKey {
         case sleepQuality = "sleep_quality"

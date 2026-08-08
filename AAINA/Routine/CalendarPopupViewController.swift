@@ -461,7 +461,7 @@ extension MonthYearPickerViewController {
 
     func pickerView(_ pickerView: UIPickerView,
                     attributedTitleForRow row: Int,
-                    forComponent component: Int) -> NSAttributedString {
+                    forComponent component: Int) -> NSAttributedString? {
 
         let text = component == 0 ? months[row] : "\(years[row])"
 
@@ -496,4 +496,3 @@ extension MonthYearPickerViewController {
         pickerView.reloadAllComponents()
     }
 }
-

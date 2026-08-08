@@ -161,7 +161,7 @@ MFMailComposeViewControllerDelegate {
         ) as! SectionHeaderReusableView
 
         header.titleLabel.textColor = .systemGray
-        header.titleLabel.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
+        header.titleLabel.font = UIFont.systemFont(ofSize: 13, weight: .semibold)
 
         switch indexPath.section {
         case 0: header.titleLabel.text = "SPREAD THE LOVE"
@@ -181,7 +181,7 @@ MFMailComposeViewControllerDelegate {
             // XIB row height = 56 pt, mainStack padding = 16 top + 16 bottom = 32 pt overhead.
             // Card height = (visible rows × 56) + 32
             let rowH: CGFloat = 56
-            let padding: CGFloat = 32
+            let padding: CGFloat = 24
             let height: CGFloat
             switch sectionIndex {
             case 0: height = rowH * 3 + padding   // Spread the Love  (3 visible rows)
@@ -203,16 +203,14 @@ MFMailComposeViewControllerDelegate {
 
             section.contentInsets = NSDirectionalEdgeInsets(
                 top: 8,
-                leading: 16,
-                bottom: 8,
-                trailing: 16
+                leading: 20,
+                bottom: 24,
+                trailing: 20
             )
-
             let headerSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
                 heightDimension: .absolute(40)
             )
-
             let header = NSCollectionLayoutBoundarySupplementaryItem(
                 layoutSize: headerSize,
                 elementKind: UICollectionView.elementKindSectionHeader,
@@ -220,6 +218,7 @@ MFMailComposeViewControllerDelegate {
             )
 
             section.boundarySupplementaryItems = [header]
+            section.interGroupSpacing = 8
             return section
         }
     }
@@ -338,7 +337,9 @@ extension SettingsViewController {
     private func openInAppBrowser(_ urlString: String) {
         guard let url = URL(string: urlString) else { return }
         let safari = SFSafariViewController(url: url)
-        safari.preferredControlTintColor = .systemPink
+        if #unavailable(iOS 26.0) {
+            safari.setValue(UIColor.systemPink, forKey: "preferredControlTintColor")
+        }
         present(safari, animated: true)
     }
 
@@ -391,6 +392,7 @@ extension SettingsViewController {
             UserDefaults.standard.removeObject(forKey: "onboardingData")
             UserDefaults.standard.removeObject(forKey: "saved_concerns")
             UserDefaults.standard.removeObject(forKey: "weeklyCheckIn_lastShownWeek")
+            UserDefaults.standard.removeObject(forKey: "loginDate")
             UserDefaults.standard.synchronize()
 
             let storyboard = UIStoryboard(name: "Main", bundle: nil)

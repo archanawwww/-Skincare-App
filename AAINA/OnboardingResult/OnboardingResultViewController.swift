@@ -68,8 +68,8 @@ class OnboardingResultViewController: UIViewController {
 
         private func registerCells() {
             OnboardingResultCollectionView.register(
-                UINib(nibName: "ResultProfileCollectionViewCell", bundle: nil),
-                forCellWithReuseIdentifier: "profile_cell"
+                UINib(nibName: ResultProfileCollectionViewCell.identifier, bundle: nil),
+                forCellWithReuseIdentifier: ResultProfileCollectionViewCell.identifier
             )
             OnboardingResultCollectionView.register(
                 UINib(nibName: "OnboardingResultRoutineCollectionViewCell", bundle: nil),
@@ -78,11 +78,6 @@ class OnboardingResultViewController: UIViewController {
             OnboardingResultCollectionView.register(
                 UINib(nibName: "StartJourneyButtonCollectionViewCell", bundle: nil),
                 forCellWithReuseIdentifier: "button_cell"
-            )
-            OnboardingResultCollectionView.register(
-                UINib(nibName: "OnboardingResultSecHeadingCollectionReusableView", bundle: nil),
-                forSupplementaryViewOfKind: "header",
-                withReuseIdentifier: "heading_view"
             )
         }
 
@@ -101,19 +96,15 @@ class OnboardingResultViewController: UIViewController {
 
                 switch sectionIndex {
                 case 0: return self.profileSection()
-                case 1:
-                    let section = self.routineSection()
-                    section.boundarySupplementaryItems = [self.sectionHeader()]
-                    return section
-                case 2: return self.routineSection()
+                case 1: return self.routineSection(topInset: 6)
+                case 2: return self.routineSection(topInset: 8)
                 case 3: return self.buttonSection()
                 default: return self.routineSection()
                 }
             }
         }
-    
-        private func profileSection() -> NSCollectionLayoutSection {
 
+        private func profileSection() -> NSCollectionLayoutSection {
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
                 heightDimension: .fractionalHeight(1.0)
@@ -122,20 +113,19 @@ class OnboardingResultViewController: UIViewController {
 
             let groupSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
-                heightDimension: .absolute(190)
+                heightDimension: .absolute(178)
             )
-            let group = NSCollectionLayoutGroup.horizontal(
+            let group = NSCollectionLayoutGroup.vertical(
                 layoutSize: groupSize,
                 subitems: [item]
             )
-            group.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
 
             let section = NSCollectionLayoutSection(group: group)
-            section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+            section.contentInsets = NSDirectionalEdgeInsets(top: 2, leading: 0, bottom: 0, trailing: 0)
             return section
         }
 
-        private func routineSection() -> NSCollectionLayoutSection {
+        private func routineSection(topInset: CGFloat = 0) -> NSCollectionLayoutSection {
 
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
@@ -154,7 +144,7 @@ class OnboardingResultViewController: UIViewController {
             group.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
 
             let section = NSCollectionLayoutSection(group: group)
-            section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+            section.contentInsets = NSDirectionalEdgeInsets(top: topInset, leading: 0, bottom: 0, trailing: 0)
             return section
         }
 
@@ -168,7 +158,7 @@ class OnboardingResultViewController: UIViewController {
 
             let groupSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1.0),
-                heightDimension: .absolute(40)
+                heightDimension: .absolute(54)
             )
             let group = NSCollectionLayoutGroup.horizontal(
                 layoutSize: groupSize,
@@ -177,42 +167,8 @@ class OnboardingResultViewController: UIViewController {
             group.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
 
             let section = NSCollectionLayoutSection(group: group)
-            section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 0, bottom: 32, trailing: 0)
+            section.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 0, bottom: 28, trailing: 0)
             return section
-        }
-
-        private func sectionHeader() -> NSCollectionLayoutBoundarySupplementaryItem {
-
-            let headerSize = NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1.0),
-                heightDimension: .absolute(44)
-            )
-            return NSCollectionLayoutBoundarySupplementaryItem(
-                layoutSize: headerSize,
-                elementKind: "header",
-                alignment: .topLeading
-            )
-        }
-    }
-
-    extension OnboardingResultViewController {
-
-        func collectionView(_ collectionView: UICollectionView,
-                            viewForSupplementaryElementOfKind kind: String,
-                            at indexPath: IndexPath) -> UICollectionReusableView {
-
-            let headerView = collectionView.dequeueReusableSupplementaryView(
-                ofKind: kind,
-                withReuseIdentifier: "heading_view",
-                for: indexPath
-            ) as! OnboardingResultSecHeadingCollectionReusableView
-
-            if indexPath.section == 1 {
-                let isAI = dataModel.aiRoutine != nil
-                headerView.configure(title: isAI ? "Your Personalized Routine" : "Recommended Routine")
-            }
-
-            return headerView
         }
     }
 
@@ -230,9 +186,9 @@ class OnboardingResultViewController: UIViewController {
 
             case 0:
                 let cell = collectionView.dequeueReusableCell(
-                    withReuseIdentifier: "profile_cell", for: indexPath
+                    withReuseIdentifier: ResultProfileCollectionViewCell.identifier, for: indexPath
                 ) as! ResultProfileCollectionViewCell
-                cell.configure(with: onboardingData, name: "Sarah")
+                cell.configure(with: onboardingData, name: profileCardName)
                 return cell
 
             case 1:
@@ -259,6 +215,13 @@ class OnboardingResultViewController: UIViewController {
             default:
                 return UICollectionViewCell()
             }
+        }
+
+        private var profileCardName: String {
+            let defaults = UserDefaults.standard
+            let savedName = defaults.string(forKey: "userName")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let isGuest = defaults.bool(forKey: "isGuestLogin") || savedName.caseInsensitiveCompare("Guest") == .orderedSame
+            return isGuest ? "Hey beautiful" : (savedName.isEmpty ? "User" : savedName)
         }
 
         private func goToHome() {

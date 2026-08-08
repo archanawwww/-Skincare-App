@@ -4,6 +4,10 @@
 
 import Foundation
 
+extension Notification.Name {
+    static let routineCompletionDidChange = Notification.Name("routineCompletionDidChange")
+}
+
 // MARK: - SkinConcern
 
 enum SkinConcern: String, CaseIterable, Codable {
@@ -168,6 +172,7 @@ final class AppDataModel {
         loadRoutineHistory()
         aiRoutine = loadAIRoutineFromDisk()
         lastFaceScanResult = loadLastFaceScanResult()
+        routineCompletion = loadRoutineCompletion()
     }
 
     // MARK: Static (JSON-backed, read-only)
@@ -191,6 +196,8 @@ final class AppDataModel {
     // MARK: Session (in-memory)
 
     private var routineCompletion: [String: [String: Bool]] = [:]
+
+    private let remoteStore = FirestoreSyncService.shared
 }
 
 // MARK: - Static Data
@@ -221,12 +228,54 @@ extension AppDataModel {
     func saveProfile(_ profile: UserProfile) {
         profile.save()
         userProfile = profile
+        remoteStore.saveProfile(profile)
+        if let onboardingData = onboardingDataFromProfile() {
+            saveOnboardingProgress(onboardingData, completed: true)
+        }
     }
 
     func updateConcerns(_ concerns: [SkinConcern]) {
         guard var updated = userProfile else { return }
         updated.concerns = concerns
         saveProfile(updated)
+    }
+
+    func saveOnboardingProgress(_ onboardingData: OnboardingData, completed: Bool = false) {
+        if let data = try? JSONEncoder().encode(onboardingData) {
+            UserDefaults.standard.set(data, forKey: "onboardingData")
+        }
+        remoteStore.saveOnboardingProgress(onboardingData, completed: completed)
+    }
+
+    func loadOnboardingProgress() -> OnboardingData? {
+        if let data = UserDefaults.standard.data(forKey: "onboardingData"),
+           let onboardingData = try? JSONDecoder().decode(OnboardingData.self, from: data) {
+            return onboardingData
+        }
+        return onboardingDataFromProfile()
+    }
+
+    func applyRemoteUserState(_ state: RemoteUserState) {
+        if let onboardingData = state.onboardingData {
+            saveOnboardingProgress(onboardingData, completed: state.profile != nil)
+        }
+        if let profile = state.profile {
+            profile.save()
+            userProfile = profile
+        }
+        if let routine = state.routine {
+            if let data = try? JSONEncoder().encode(routine) {
+                try? data.write(to: aiRoutineURL)
+            }
+            aiRoutine = routine
+        }
+        if let faceScanResult = state.faceScanResult {
+            saveLastFaceScanResult(faceScanResult)
+        }
+        journalEntries = state.journalEntries
+        persistJournalEntries()
+        routineCompletion = state.routineCompletion
+        persistRoutineCompletion()
     }
 }
 
@@ -285,20 +334,59 @@ extension AppDataModel {
 extension AppDataModel {
 
     func toggleStep(stepID: String, date: Date = Date()) {
+        guard isRoutineCompletionEditable(date: date) else { return }
         let key     = dateKey(date)
         let current = routineCompletion[key]?[stepID] ?? false
         if routineCompletion[key] == nil { routineCompletion[key] = [:] }
         routineCompletion[key]?[stepID] = !current
+        persistRoutineCompletion()
+    }
+
+    func setStepDone(stepID: String, isDone: Bool, date: Date = Date()) {
+        guard isRoutineCompletionEditable(date: date) else { return }
+        let key = dateKey(date)
+        if routineCompletion[key] == nil { routineCompletion[key] = [:] }
+        routineCompletion[key]?[stepID] = isDone
+        persistRoutineCompletion()
+    }
+
+    func isRoutineCompletionEditable(date: Date = Date(), now: Date = Date()) -> Bool {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+        guard let lockDate = calendar.date(byAdding: .day, value: 2, to: dayStart) else {
+            return false
+        }
+        return now < lockDate
     }
 
     func isStepDone(stepID: String, date: Date = Date()) -> Bool {
         routineCompletion[dateKey(date)]?[stepID] ?? false
     }
 
+    func completedStepIDs(date: Date = Date()) -> Set<String> {
+        let completions = routineCompletion[dateKey(date)] ?? [:]
+        return Set(completions.compactMap { $0.value ? $0.key : nil })
+    }
+
     private func dateKey(_ date: Date) -> String {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         return f.string(from: date)
+    }
+
+    private func loadRoutineCompletion() -> [String: [String: Bool]] {
+        guard let data = try? Data(contentsOf: routineCompletionURL) else { return [:] }
+        return (try? JSONDecoder().decode([String: [String: Bool]].self, from: data)) ?? [:]
+    }
+
+    private func persistRoutineCompletion() {
+        guard let data = try? JSONEncoder().encode(routineCompletion) else { return }
+        try? data.write(to: routineCompletionURL)
+        remoteStore.saveRoutineCompletion(routineCompletion)
+    }
+
+    private var routineCompletionURL: URL {
+        documentsDirectory.appendingPathComponent("routine_completion.json")
     }
 }
 
@@ -312,6 +400,7 @@ extension AppDataModel {
         guard let data = try? JSONEncoder().encode(output) else { return }
         try? data.write(to: aiRoutineURL)
         aiRoutine = output
+        remoteStore.saveRoutine(output, reason: reason)
 
         let stepCount = output.morning.count + output.evening.count
         recordRoutineHistory(
@@ -327,6 +416,18 @@ extension AppDataModel {
         guard let data = try? JSONEncoder().encode(result) else { return }
         try? data.write(to: lastFaceScanURL)
         lastFaceScanResult = result
+        remoteStore.saveFaceScanResult(result)
+    }
+
+    func loadTodayRoutineFromFirestore() async -> AIRoutineOutput? {
+        guard let routine = try? await remoteStore.loadTodayRoutine() else { return nil }
+        guard let data = try? JSONEncoder().encode(routine) else {
+            aiRoutine = routine
+            return routine
+        }
+        try? data.write(to: aiRoutineURL)
+        aiRoutine = routine
+        return routine
     }
 
     func onboardingDataFromProfile() -> OnboardingData? {
@@ -378,6 +479,7 @@ extension AppDataModel {
     func saveRoutine(named name: String, from output: AIRoutineOutput) {
         savedRoutines.append(SavedRoutine(name: name, from: output))
         persistSavedRoutines()
+        remoteStore.saveRoutine(output, reason: "Saved as \(name)")
     }
 
     func deleteSavedRoutine(id: String) {
@@ -493,11 +595,13 @@ extension AppDataModel {
     func addJournalEntry(_ entry: JournalEntry) {
         journalEntries.insert(entry, at: 0)
         persistJournalEntries()
+        remoteStore.saveJournalEntry(entry)
     }
 
     func deleteJournalEntry(id: String) {
         journalEntries.removeAll { $0.id == id }
         persistJournalEntries()
+        remoteStore.deleteJournalEntry(id: id)
     }
 
     func journalEntries(for date: Date) -> [JournalEntry] {

@@ -22,6 +22,8 @@ class OnboardingCameraViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        overrideUserInterfaceStyle = .light
+        
         view.backgroundColor = .black
         navigationItem.hidesBackButton = launchMode == .onboarding
         navigationItem.rightBarButtonItem = UIBarButtonItem(

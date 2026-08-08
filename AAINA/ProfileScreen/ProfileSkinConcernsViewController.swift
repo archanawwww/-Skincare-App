@@ -168,12 +168,6 @@ class ProfileSkinConcernsViewController: UIViewController,
             AppDataModel.shared.updateConcerns(concernsArray)
         }
         
-        // Also save to onboardingData key
-        var od = OnboardingData()
-        if let existing = UserDefaults.standard.data(forKey: "onboardingData"),
-           let decoded = try? JSONDecoder().decode(OnboardingData.self, from: existing) {
-            od = decoded
-        }
         // Save concerns count to UserDefaults directly
         UserDefaults.standard.set(concernsArray.map { $0.rawValue }, forKey: "saved_concerns")
         UserDefaults.standard.synchronize()

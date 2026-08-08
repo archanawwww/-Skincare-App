@@ -80,7 +80,7 @@ class SkinLogReportPickerViewController: UIViewController {
     private func setupContent() {
         // Subtitle
         let subtitleLbl = UILabel()
-        subtitleLbl.text          = "Generate a PDF of your skin logs for any date range."
+        subtitleLbl.text          = "Generate a PDF of your skin reports for any date range."
         subtitleLbl.font          = .systemFont(ofSize: 14)
         subtitleLbl.textColor     = .secondaryLabel
         subtitleLbl.numberOfLines = 0
@@ -343,7 +343,7 @@ class SkinLogReportPickerViewController: UIViewController {
         guard !entries.isEmpty else {
             let alert = UIAlertController(
                 title: "No Entries",
-                message: "No skin log entries found in the selected range.",
+                message: "No skin report entries found in the selected range.",
                 preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "OK", style: .default))
             present(alert, animated: true)

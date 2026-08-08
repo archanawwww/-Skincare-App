@@ -40,7 +40,7 @@ class SkinLogListViewController: UIViewController {
     // MARK: - Nav
 
     private func setupNav() {
-        title = "Skin Logs"
+        title = "Skin Reports"
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.largeTitleDisplayMode = .always
 
@@ -116,7 +116,7 @@ class SkinLogListViewController: UIViewController {
         titleLbl.textAlignment = .center
 
         let subtitleLbl = UILabel()
-        subtitleLbl.text          = "Tap + Skin Log on your journal\nto add your first entry."
+        subtitleLbl.text          = "Tap + Skin Report on your journal\nto add your first entry."
         subtitleLbl.font          = .systemFont(ofSize: 14)
         subtitleLbl.textColor     = .secondaryLabel
         subtitleLbl.textAlignment = .center

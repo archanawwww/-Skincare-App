@@ -13,6 +13,7 @@
 		D6CC39AE2F88B76D0034FE5B /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = D6CC39AD2F88B76D0034FE5B /* GoogleSignInSwift */; };
 		D6FD05182F878A2B0053423E /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = D6FD05172F878A2B0053423E /* FirebaseAuth */; };
 		D6FD051A2F878A2B0053423E /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = D6FD05192F878A2B0053423E /* FirebaseCore */; };
+		D6FD051C2F878A2B0053423E /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = D6FD051B2F878A2B0053423E /* FirebaseFirestore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +51,7 @@
 				D6FD05182F878A2B0053423E /* FirebaseAuth in Frameworks */,
 				D6CC39AE2F88B76D0034FE5B /* GoogleSignInSwift in Frameworks */,
 				D6FD051A2F878A2B0053423E /* FirebaseCore in Frameworks */,
+				D6FD051C2F878A2B0053423E /* FirebaseFirestore in Frameworks */,
 				D6AC63D02F877114002096E6 /* Lottie in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -97,6 +99,7 @@
 				D6AC63CF2F877114002096E6 /* Lottie */,
 				D6FD05172F878A2B0053423E /* FirebaseAuth */,
 				D6FD05192F878A2B0053423E /* FirebaseCore */,
+				D6FD051B2F878A2B0053423E /* FirebaseFirestore */,
 				D6CC39AB2F88B76D0034FE5B /* GoogleSignIn */,
 				D6CC39AD2F88B76D0034FE5B /* GoogleSignInSwift */,
 			);
@@ -111,8 +114,8 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2620;
-				LastUpgradeCheck = 2620;
+				LastSwiftUpdateCheck = 2650;
+				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					D6CF8A542F40310000EB14FB = {
 						CreatedOnToolsVersion = 26.2;
@@ -170,10 +173,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = AAINA/AAINA.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 97K2S3QK62;
+				DEVELOPMENT_TEAM = ZZUV4VZYQN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AAINA/Info.plist;
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "App needs calendar access to create reminders.";
@@ -189,7 +193,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.AAINA.pavni;
+				PRODUCT_BUNDLE_IDENTIFIER = com.arc.AAINA;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -206,10 +210,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = AAINA/AAINA.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 97K2S3QK62;
+				DEVELOPMENT_TEAM = ZZUV4VZYQN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AAINA/Info.plist;
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "App needs calendar access to create reminders.";
@@ -225,7 +230,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.AAINA.pavni;
+				PRODUCT_BUNDLE_IDENTIFIER = com.arc.AAINA;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -446,6 +451,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = D6FD05162F878A2B0053423E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCore;
+		};
+		D6FD051B2F878A2B0053423E /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D6FD05162F878A2B0053423E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

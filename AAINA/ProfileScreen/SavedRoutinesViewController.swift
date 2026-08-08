@@ -627,7 +627,7 @@ private final class EmptyStateCell: UITableViewCell {
         actionButton.tintColor = .white
         actionButton.layer.cornerRadius = 16
         actionButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
-        actionButton.contentEdgeInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
+        actionButton.setValue(NSValue(uiEdgeInsets: UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)), forKey: "contentEdgeInsets")
         actionButton.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
 
         cardView.addSubview(iconView)

@@ -67,17 +67,23 @@ final class ResultProfileCollectionViewCell: UICollectionViewCell {
         Image.layer.borderColor = UIColor.white.withAlphaComponent(0.55).cgColor
         Image.backgroundColor = .ainaTintedGlassLight
         
-        nameLabel.font = .systemFont(ofSize: 40, weight: .regular)
+        nameLabel.font = .systemFont(ofSize: 31, weight: .semibold)
         nameLabel.textColor = .ainaTextPrimary
         nameLabel.numberOfLines = 1
         nameLabel.adjustsFontSizeToFitWidth = true
-        nameLabel.minimumScaleFactor = 0.65
+        nameLabel.minimumScaleFactor = 0.72
         
-        applyGlass(to: ageCardView, cornerRadius: 18)
-        AgeLabel.font = .systemFont(ofSize: 17, weight: .regular)
-        AgeLabel.textColor = .ainaTextPrimary
+        ageCardView.subviews
+            .filter { $0.tag == 9201 }
+            .forEach { $0.removeFromSuperview() }
+        ageCardView.backgroundColor = .clear
+        ageCardView.layer.borderWidth = 0
+        ageCardView.layer.shadowOpacity = 0
+        ageCardView.clipsToBounds = false
+        AgeLabel.font = .systemFont(ofSize: 23, weight: .regular)
+        AgeLabel.textColor = .ainaTextSecondary
         AgeLabel.numberOfLines = 1
-        AgeLabel.textAlignment = .center
+        AgeLabel.textAlignment = .left
         AgeLabel.adjustsFontSizeToFitWidth = true
         AgeLabel.minimumScaleFactor = 0.8
         
@@ -109,7 +115,7 @@ final class ResultProfileCollectionViewCell: UICollectionViewCell {
         nameLabel.text = name
         
         if let age = calculateAge(from: onboardingData.birthYear) {
-            AgeLabel.text = "\(age) yrs"
+            AgeLabel.text = "\(age) years"
         } else {
             AgeLabel.text = ""
         }

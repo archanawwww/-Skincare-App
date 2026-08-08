@@ -9,6 +9,7 @@ struct WeeklyCheckInData: Codable {
     var weekKey:   String = ""
     var weekStart: Date   = Date()
     var weekEnd:   Date   = Date()
+    var createdAt: Date?  = nil
 
     var skinCondition:          String   = ""
     var concerns:               [String] = []

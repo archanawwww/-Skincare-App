@@ -34,7 +34,7 @@
                         <constraints>
                             <constraint firstItem="1r2-UM-0bM" firstAttribute="top" secondItem="YqW-tj-i77" secondAttribute="top" constant="16" id="7Fl-uY-4sb"/>
                             <constraint firstItem="1r2-UM-0bM" firstAttribute="leading" secondItem="YqW-tj-i77" secondAttribute="leading" constant="16" id="Cp6-hs-wEn"/>
-                            <constraint firstItem="Xtb-TG-QPg" firstAttribute="top" secondItem="1r2-UM-0bM" secondAttribute="bottom" constant="20" id="JcX-zz-OFb"/>
+                            <constraint firstItem="Xtb-TG-QPg" firstAttribute="top" secondItem="1r2-UM-0bM" secondAttribute="bottom" constant="14" id="JcX-zz-OFb"/>
                             <constraint firstAttribute="trailing" secondItem="Xtb-TG-QPg" secondAttribute="trailing" constant="16" id="L2d-Zv-6Jy"/>
                             <constraint firstAttribute="bottom" secondItem="Xtb-TG-QPg" secondAttribute="bottom" constant="16" id="Nqy-jn-ut8"/>
                             <constraint firstItem="Xtb-TG-QPg" firstAttribute="leading" secondItem="YqW-tj-i77" secondAttribute="leading" constant="16" id="Qkg-5G-g0n"/>
@@ -45,8 +45,8 @@
             <viewLayoutGuide key="safeArea" id="ZTg-uK-7eu"/>
             <constraints>
                 <constraint firstAttribute="trailing" secondItem="YqW-tj-i77" secondAttribute="trailing" constant="16" id="4UH-Si-KyO"/>
-                <constraint firstItem="YqW-tj-i77" firstAttribute="top" secondItem="gTV-IL-0wX" secondAttribute="top" constant="16" id="a7j-bI-7uU"/>
-                <constraint firstAttribute="bottom" secondItem="YqW-tj-i77" secondAttribute="bottom" constant="16" id="njq-cd-fEQ"/>
+                <constraint firstItem="YqW-tj-i77" firstAttribute="top" secondItem="gTV-IL-0wX" secondAttribute="top" constant="8" id="a7j-bI-7uU"/>
+                <constraint firstAttribute="bottom" secondItem="YqW-tj-i77" secondAttribute="bottom" constant="8" id="njq-cd-fEQ"/>
                 <constraint firstItem="YqW-tj-i77" firstAttribute="leading" secondItem="gTV-IL-0wX" secondAttribute="leading" constant="16" id="xdr-EO-mcP"/>
             </constraints>
             <size key="customSize" width="327" height="290"/>

@@ -3,21 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>205433583227-6bi51k8v04f7i7vv49da4qc1bhogbg9l.apps.googleusercontent.com</string>
+	<string>833277596184-ccdsuuk0hgj61g9qk3bgnovh633evfh7.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.205433583227-6bi51k8v04f7i7vv49da4qc1bhogbg9l</string>
+	<string>com.googleusercontent.apps.833277596184-ccdsuuk0hgj61g9qk3bgnovh633evfh7</string>
 	<key>API_KEY</key>
-	<string>AIzaSyDbIWcxT3b4qX_ljJUpdlsRRWf1dRX2MdQ</string>
+	<string>AIzaSyC5rET5-xmQlY-ipFADFj7qaEBGyiI0F6c</string>
 	<key>GCM_SENDER_ID</key>
-	<string>205433583227</string>
+	<string>833277596184</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.AAINA.app</string>
+	<string>com.AAINA.gehu</string>
 	<key>PROJECT_ID</key>
-	<string>aaina-1b93c</string>
+	<string>aaina-3dd68</string>
 	<key>STORAGE_BUCKET</key>
-	<string>aaina-1b93c.firebasestorage.app</string>
+	<string>aaina-3dd68.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -29,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:205433583227:ios:7acf438762393f90ddd4de</string>
+	<string>1:833277596184:ios:5a057069d108dacadfe96d</string>
 </dict>
 </plist>

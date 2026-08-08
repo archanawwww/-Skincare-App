@@ -67,8 +67,8 @@ class SkinLogViewController: UIViewController {
 
     private func populateIfEditing() {
         guard let entry = existingEntry else { return }
-        title = "Edit Skin Log"
-        saveButton.setTitle("Update Log", for: .normal)
+        title = "Edit Skin Report"
+        saveButton.setTitle("Update Report", for: .normal)
 
         titleTextField.text = entry.title
         if !entry.note.isEmpty {
@@ -118,7 +118,7 @@ class SkinLogViewController: UIViewController {
     // MARK: - Navigation bar
 
     private func setupNavBar() {
-        title = "Skin Log"
+        title = "Skin Report"
         navigationController?.navigationBar.prefersLargeTitles = false
         // Share/export only available when editing a saved entry
         guard existingEntry != nil else { return }
@@ -133,17 +133,33 @@ class SkinLogViewController: UIViewController {
     }
 
     @objc private func exportTapped() {
-        let text  = notesTextView.text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let text = notesTextView.text.trimmingCharacters(in: .whitespacesAndNewlines)
         let title = titleTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        // Save newly selected photos temporarily
+        let newFileNames = selectedPhotos.compactMap { JournalPhotoStore.save($0) }
+
+        // Combine existing + newly selected photos
+        let allFileNames = existingPhotoFileNames + newFileNames
+
         let entry = SkinLogEntry(
-            isFlareUp:      isFlareUp,
-            flareUps:       Array(selectedTags).sorted(),
-            note:           text,
-            title:          title,
-            photoFileNames: []
+            id: existingEntry?.id ?? UUID().uuidString,
+            date: existingEntry?.date ?? Date(),
+            isFlareUp: isFlareUp,
+            flareUps: Array(selectedTags).sorted(),
+            note: text,
+            title: title,
+            photoFileNames: allFileNames
         )
+
         let pdf = SkinLogPDFExporter.generate(from: entry)
-        let av  = UIActivityViewController(activityItems: [pdf], applicationActivities: nil)
+
+        let av = UIActivityViewController(
+            activityItems: [pdf],
+            applicationActivities: nil
+        )
+
         present(av, animated: true)
     }
 

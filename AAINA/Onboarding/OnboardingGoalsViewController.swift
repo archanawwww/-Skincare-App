@@ -13,6 +13,7 @@ class OnboardingGoalsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        overrideUserInterfaceStyle = .light
         
 
         view.applyAINABackground()
@@ -37,6 +38,9 @@ class OnboardingGoalsViewController: UIViewController {
                 }
             }
             preselectSavedGoals()
+        } else {
+            updateAllButtons()
+            validateNextButton()
         }
     }
 
@@ -65,6 +69,7 @@ class OnboardingGoalsViewController: UIViewController {
 
     @IBAction func nextTapped(_ sender: UIButton) {
         guard !onboardingData.goals.isEmpty else { return }
+        AppDataModel.shared.saveOnboardingProgress(onboardingData)
 
         if isEditingProfile {
             var od = OnboardingData()

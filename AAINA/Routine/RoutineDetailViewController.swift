@@ -6,6 +6,7 @@ class RoutineDetailViewController: UIViewController {
     var step: RoutineStep?
     var aiStep: AIRoutineStep?
     var dataModel: DataModel!
+    private var videoPlayer: AVPlayer?
 
     private let scrollView = UIScrollView()
     private let contentStack = UIStackView()
@@ -109,8 +110,10 @@ extension RoutineDetailViewController {
         card.clipsToBounds = true
         card.layer.cornerRadius = 24
 
-        if let url = Bundle.main.url(forResource: "Cleanser", withExtension: "mp4") {
+        if let videoName = routineVideoResourceName(),
+           let url = Bundle.main.url(forResource: videoName, withExtension: "mp4") {
             let player = AVPlayer(url: url)
+            videoPlayer = player
             let playerVC = AVPlayerViewController()
             playerVC.player = player
             playerVC.showsPlaybackControls = true
@@ -128,6 +131,8 @@ extension RoutineDetailViewController {
                 playerVC.view.leadingAnchor.constraint(equalTo: card.leadingAnchor),
                 playerVC.view.trailingAnchor.constraint(equalTo: card.trailingAnchor)
             ])
+
+            player.play()
         } else {
             // No video found — show a placeholder icon and label instead
             let icon = UIImageView(image: UIImage(systemName: "drop.fill")?
@@ -176,6 +181,43 @@ extension RoutineDetailViewController {
         }
 
         return card
+    }
+
+    private func routineVideoResourceName() -> String? {
+        let type = aiStep?.productType ?? step?.type
+
+        switch type {
+        case .cleanser:
+            return "cleanser"
+        case .toner:
+            return "Toner"
+        case .serum:
+            return "Serum"
+        case .moisturizer:
+            return "moisturiser"
+        case .sunscreen:
+            return "Sunscreen"
+        case .treatment:
+            return "Treatment"
+        case .repair:
+            return "Repair"
+        case .none:
+            return routineVideoResourceName(from: aiStep?.productName ?? step?.stepTitle ?? "")
+        }
+    }
+
+    private func routineVideoResourceName(from text: String) -> String? {
+        let normalized = text.lowercased()
+
+        if normalized.contains("cleanser") { return "cleanser" }
+        if normalized.contains("toner") { return "Toner" }
+        if normalized.contains("serum") { return "Serum" }
+        if normalized.contains("moisturizer") || normalized.contains("moisturiser") { return "moisturiser" }
+        if normalized.contains("sunscreen") || normalized.contains("spf") { return "Sunscreen" }
+        if normalized.contains("treatment") || normalized.contains("retinol") { return "Treatment" }
+        if normalized.contains("repair") { return "Repair" }
+
+        return nil
     }
 }
 

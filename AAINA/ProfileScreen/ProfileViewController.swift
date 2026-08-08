@@ -291,7 +291,7 @@ return UICollectionViewCompositionalLayout { sectionIndex, _ in
 
     let sectionHeights: [Int: CGFloat] = [
         0: 140,   // Profile Card
-        1: 300    // Skin Profile
+        1: 320    // Skin Profile
     ]
 
     let height = sectionHeights[sectionIndex] ?? 250

@@ -9,12 +9,10 @@ class TimelineCollectionViewCell: UICollectionViewCell {
 
     private let faceScanIndicator = UIView()
     private let weeklyInputIndicator = UIView()
+    private let insightSelectionPill = UIView()
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
-        print("dayLabel:", dayLabel as Any)
-        print("dateLabel:", dateLabel as Any)
         
         dayLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         dayLabel.textColor = .secondaryLabel
@@ -25,8 +23,14 @@ class TimelineCollectionViewCell: UICollectionViewCell {
         dateLabel.clipsToBounds = true
         dateLabel.textAlignment = .center
 
-        setupInsightIndicator(faceScanIndicator, color: .ainaDustyRose)
-        setupInsightIndicator(weeklyInputIndicator, color: .ainaSageGreen)
+        insightSelectionPill.backgroundColor = UIColor.ainaLightBlush.withAlphaComponent(0.72)
+        insightSelectionPill.layer.borderWidth = 1
+        insightSelectionPill.layer.borderColor = UIColor.white.withAlphaComponent(0.9).cgColor
+        insightSelectionPill.isHidden = true
+        contentView.insertSubview(insightSelectionPill, at: 0)
+
+        setupInsightIndicator(faceScanIndicator, color: .ainaSageGreen)
+        setupInsightIndicator(weeklyInputIndicator, color: .ainaDustyRose)
     }
     
     override func layoutSubviews() {
@@ -37,6 +41,10 @@ class TimelineCollectionViewCell: UICollectionViewCell {
         dateLabel.frame = CGRect(x: (w - 44) / 2, y: 28, width: 44, height: 44)
         dateLabel.layer.cornerRadius = 22
         dateLabel.clipsToBounds = true
+
+        insightSelectionPill.frame = CGRect(x: (w - 54) / 2, y: 24, width: 54, height: 76)
+        insightSelectionPill.layer.cornerRadius = 27
+        contentView.sendSubviewToBack(insightSelectionPill)
 
         faceScanIndicator.frame = CGRect(x: (w - 17) / 2, y: 78, width: 6, height: 6)
         weeklyInputIndicator.frame = CGRect(x: (w + 5) / 2, y: 78, width: 6, height: 6)
@@ -50,6 +58,7 @@ class TimelineCollectionViewCell: UICollectionViewCell {
         dateLabel.layer.borderColor = nil
         dayLabel.textColor = .secondaryLabel
         contentView.alpha = 1
+        insightSelectionPill.isHidden = true
         faceScanIndicator.isHidden = true
         weeklyInputIndicator.isHidden = true
     }
@@ -111,16 +120,39 @@ class TimelineCollectionViewCell: UICollectionViewCell {
                              isFuture: Bool) {
         configure(day: day, date: date, isToday: isToday, isSelected: isSelected)
 
+        insightSelectionPill.isHidden = true
         faceScanIndicator.isHidden = !hasFaceScan
         weeklyInputIndicator.isHidden = !hasWeeklyInput
-        contentView.alpha = isFuture ? 0.35 : 1
+        contentView.alpha = 1
+        dayLabel.textColor = .secondaryLabel
+        dateLabel.layer.shadowOpacity = 0
+
+        if isToday {
+            dateLabel.backgroundColor = UIColor.ainaCoralPink.withAlphaComponent(0.72)
+            dateLabel.textColor = .white
+            dateLabel.layer.borderWidth = 0
+            dateLabel.layer.borderColor = nil
+        } else if isSelected {
+            dateLabel.backgroundColor = UIColor.ainaDustyRose.withAlphaComponent(0.72)
+            dateLabel.textColor = .white
+            dateLabel.layer.borderWidth = 0
+            dateLabel.layer.borderColor = nil
+        } else {
+            dateLabel.backgroundColor = UIColor.white.withAlphaComponent(0.4)
+            dateLabel.textColor = UIColor.ainaTextPrimary
+            dateLabel.layer.borderWidth = 1
+            dateLabel.layer.borderColor = UIColor.white.withAlphaComponent(1).cgColor
+        }
 
         if isFuture {
-            dateLabel.backgroundColor = UIColor.white.withAlphaComponent(0.18)
-            dateLabel.textColor = UIColor.ainaTextTertiary
-            dayLabel.textColor = UIColor.ainaTextTertiary
-        } else {
-            dayLabel.textColor = .secondaryLabel
+            faceScanIndicator.isHidden = true
+            weeklyInputIndicator.isHidden = true
+            dayLabel.textColor = UIColor.ainaTextTertiary.withAlphaComponent(0.55)
+            dateLabel.backgroundColor = UIColor.white.withAlphaComponent(0.22)
+            dateLabel.textColor = UIColor.ainaTextTertiary.withAlphaComponent(0.55)
+            dateLabel.layer.borderWidth = 1
+            dateLabel.layer.borderColor = UIColor.white.withAlphaComponent(0.45).cgColor
+            contentView.alpha = 0.65
         }
     }
 

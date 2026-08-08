@@ -51,6 +51,10 @@ class StepCollectionViewCell: UICollectionViewCell {
     
     override func prepareForReuse() {
         super.prepareForReuse()
+        shouldAllowCheck = nil
+        checkChanged = nil
+        onProductTapped = nil
+        arrowTapped = nil
         updateCheckboxUI(animated: false)
         ingredientsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         productsContainerView.subviews.forEach { $0.removeFromSuperview() }
@@ -404,7 +408,7 @@ class StepCollectionViewCell: UICollectionViewCell {
                 btn.layer.cornerRadius = 12
                 btn.layer.cornerCurve  = .continuous
                 btn.translatesAutoresizingMaskIntoConstraints = false
-                btn.addAction(UIAction { [weak self] _ in
+                btn.addAction(UIAction { _ in
                     guard let urlString = product.productURL,
                           let url = URL(string: urlString) else { return }
                     UIApplication.shared.open(url)

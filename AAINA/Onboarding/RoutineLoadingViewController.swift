@@ -13,6 +13,7 @@ class RoutineLoadingViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        overrideUserInterfaceStyle = .light
         navigationItem.hidesBackButton = true
         view.backgroundColor = .systemBackground
         setupUI()
@@ -64,6 +65,21 @@ class RoutineLoadingViewController: UIViewController {
     private func startAnalysis() {
         Task {
             do {
+                let loginName = UserDefaults.standard.string(forKey: "userName") ?? "User"
+                if await dataModel.loadTodayRoutineFromFirestore() != nil {
+                    if let profile = UserProfile.from(onboarding: self.onboardingData, name: loginName) {
+                        AppDataModel.shared.saveProfile(profile)
+                    }
+                    await MainActor.run {
+                        if self.returnToMainAppAfterGeneration {
+                            self.transitionToOnboardingResult()
+                        } else {
+                            self.navigationController?.popToRootViewController(animated: true)
+                        }
+                    }
+                    return
+                }
+
                 let prompt = RoutinePromptBuilder.build(
                     onboardingData: onboardingData,
                     ingredients: dataModel.allIngredients(),
@@ -77,7 +93,6 @@ class RoutineLoadingViewController: UIViewController {
                 dataModel.saveAIRoutine(output.routine)
                 dataModel.saveLastFaceScanResult(output.scanResult)
 
-                let loginName = UserDefaults.standard.string(forKey: "userName") ?? "User"
                 if let profile = UserProfile.from(onboarding: self.onboardingData, name: loginName) {
                     AppDataModel.shared.saveProfile(profile)
                 }

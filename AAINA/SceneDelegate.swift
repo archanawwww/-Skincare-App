@@ -23,10 +23,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         dataModel = AppDataModel.shared
 
-                let window = UIWindow(windowScene: windowScene)
+               let window = UIWindow(windowScene: windowScene)
                 self.window = window
 
                 let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        window.overrideUserInterfaceStyle = .light
 
                 if UserProfile.load() != nil {
                     // User already completed onboarding — go straight to the main app

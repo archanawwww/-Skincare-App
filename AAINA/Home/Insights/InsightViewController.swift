@@ -11,6 +11,7 @@ final class InsightViewController: UIViewController {
     private var timelineDates: [Date] = []
     private var selectedDate = Date()
     private var selectedMode: Mode = .face
+    var initialSelectedDate: Date?
 
     private let topBar = UIView()
     private let backButton = UIButton(type: .system)
@@ -29,7 +30,9 @@ final class InsightViewController: UIViewController {
         view.backgroundColor = .white
         view.applyAINABackground()
         entries = store.allEntries()
-        selectedDate = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.current.startOfDay(for: Date())
+        let initialDate = Calendar.current.startOfDay(for: initialSelectedDate ?? Date())
+        selectedDate = min(initialDate, today)
         buildTimeline()
         setupTopBar()
         setupTimeline()
@@ -93,8 +96,8 @@ final class InsightViewController: UIViewController {
     private func setupTimeline() {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
-        layout.minimumLineSpacing = 8
-        layout.sectionInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        layout.minimumLineSpacing = 2
+        layout.sectionInset = .zero
         timelineCollectionView.setCollectionViewLayout(layout, animated: false)
         timelineCollectionView.translatesAutoresizingMaskIntoConstraints = false
         timelineCollectionView.backgroundColor = .clear
@@ -167,16 +170,17 @@ final class InsightViewController: UIViewController {
     private func buildTimeline() {
         timelineDates.removeAll()
         let calendar = Calendar.current
-        let selectedDay = calendar.startOfDay(for: selectedDate)
-        guard let range = calendar.range(of: .day, in: .month, for: selectedDay) else { return }
-        let components = calendar.dateComponents([.year, .month], from: selectedDay)
+        let today = calendar.startOfDay(for: Date())
+        let startDate = calendar.date(byAdding: .month, value: -1, to: today) ?? today
+        let weekday = calendar.component(.weekday, from: today)
+        let startOfCurrentWeek = calendar.date(byAdding: .day, value: 1 - weekday, to: today) ?? today
+        let endOfCurrentWeek = calendar.date(byAdding: .day, value: 6, to: startOfCurrentWeek) ?? today
 
-        for day in range {
-            var dateComponents = components
-            dateComponents.day = day
-            if let date = calendar.date(from: dateComponents) {
-                timelineDates.append(date)
-            }
+        var current = calendar.startOfDay(for: startDate)
+        while current <= endOfCurrentWeek {
+            timelineDates.append(current)
+            guard let next = calendar.date(byAdding: .day, value: 1, to: current) else { break }
+            current = next
         }
     }
 
@@ -227,9 +231,10 @@ final class InsightViewController: UIViewController {
     }
 
     private func selectDate(_ date: Date) {
-        let day = Calendar.current.startOfDay(for: date)
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let day = min(calendar.startOfDay(for: date), today)
         selectedDate = day
-        buildTimeline()
         selectedMode = store.hasWeeklyInput(on: day) ? .weekly : .face
         updateForCurrentSelection()
         scrollSelectedDateToCenter(animated: true)
@@ -289,7 +294,7 @@ extension InsightViewController: UICollectionViewDataSource {
             let formatter = DateFormatter()
             formatter.dateFormat = "E"
             let day = String(formatter.string(from: date).prefix(1))
-            let dateText = String(Calendar.current.component(.day, from: date))
+            let dateText = String(format: "%02d", Calendar.current.component(.day, from: date))
             cell.configureForInsight(
                 day: day,
                 date: dateText,
@@ -333,7 +338,10 @@ extension InsightViewController: UICollectionViewDelegateFlowLayout {
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
         if collectionView == timelineCollectionView {
-            return CGSize(width: 50, height: 90)
+            let insets: CGFloat = 0
+            let spacing: CGFloat = 12
+            let width = (collectionView.bounds.width - insets - spacing) / 7
+            return CGSize(width: width, height: 90)
         }
         let width = collectionView.bounds.width - 32
         guard let entry = currentEntry() else {

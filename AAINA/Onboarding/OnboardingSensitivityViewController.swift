@@ -16,6 +16,7 @@ class OnboardingSensitivityViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        overrideUserInterfaceStyle = .light
 
         view.applyAINABackground()
         setupCard()
@@ -41,6 +42,8 @@ class OnboardingSensitivityViewController: UIViewController {
                 }
             }
             preselectSavedSensitivity()
+        } else if onboardingData.sensitivity != nil {
+            preselectCurrentSensitivity()
         }
     }
 
@@ -57,6 +60,7 @@ class OnboardingSensitivityViewController: UIViewController {
 
     @IBAction func nextTapped(_ sender: UIButton) {
         guard let sensitivity = onboardingData.sensitivity else { return }
+        AppDataModel.shared.saveOnboardingProgress(onboardingData)
 
         if isEditingProfile {
             var od = OnboardingData()
@@ -97,6 +101,15 @@ class OnboardingSensitivityViewController: UIViewController {
             }
             enableNextButton()
         }
+    }
+
+    private func preselectCurrentSensitivity() {
+        guard let sensitivity = onboardingData.sensitivity else { return }
+        let tag = tagFrom(sensitivity)
+        if let btn = sensitivityButtons.first(where: { $0.tag == tag }) {
+            updateSelection(selected: btn)
+        }
+        enableNextButton()
     }
 
     private func tagFrom(_ level: SensitivityLevel) -> Int {

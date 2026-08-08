@@ -49,7 +49,7 @@ class EntryCollectionViewCell: UITableViewCell {
         } else if !skinLog.note.isEmpty {
             displayText = skinLog.note
         } else {
-            displayText = "Skin log"
+            displayText = "Skin report"
         }
 
         entryLabel.attributedText = nil
